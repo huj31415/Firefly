@@ -25,6 +25,7 @@ namespace AtmosphericFx
 
 			GameEvents.onDockingComplete.Add(DockingEvent);
 			GameEvents.onVesselPartCountChanged.Add(ModifiedEventFunction);
+			GameEvents.onVesselSOIChanged.Add(SoiChangeFunction);
 		}
 
 		public void OnDestroy()
@@ -33,6 +34,7 @@ namespace AtmosphericFx
 
 			GameEvents.onDockingComplete.Remove(DockingEvent);
 			GameEvents.onVesselPartCountChanged.Remove(ModifiedEventFunction);
+			GameEvents.onVesselSOIChanged.Remove(SoiChangeFunction);
 		}
 
 		/// <summary>
@@ -72,7 +74,7 @@ namespace AtmosphericFx
 		}
 
 		/// <summary>
-		/// Function of the event that fires everytime a vessel is modified, sends a reload event
+		/// Fires everytime a vessel is modified, sends a reload event
 		/// </summary>
 		void ModifiedEventFunction(Vessel vessel)
 		{
@@ -80,6 +82,17 @@ namespace AtmosphericFx
 			Logging.Log(vessel.name);
 
 			if (fxInstances.ContainsKey(vessel.id)) fxInstances[vessel.id].ReloadVessel();
+		}
+
+		/// <summary>
+		/// Fires everytime a vessel changes it's SOI
+		/// </summary>
+		void SoiChangeFunction(GameEvents.HostedFromToAction<Vessel, CelestialBody> action)
+		{
+			if (fxInstances.ContainsKey(action.host.id))
+			{
+				fxInstances[action.host.id].UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(action.host));
+			}
 		}
 	}
 }

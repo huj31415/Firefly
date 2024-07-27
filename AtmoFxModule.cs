@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static VehiclePhysics.VPPerformanceDisplay;
 
 namespace AtmosphericFx
 {
@@ -66,6 +67,23 @@ namespace AtmosphericFx
 		float lastSpeed = 0f;
 		float desiredRate;
 
+		public BodyConfig currentBody;
+
+		AerodynamicsFX _aeroFX;
+		public AerodynamicsFX AeroFX
+		{
+			get
+			{
+				if (_aeroFX == null)
+				{
+					GameObject fxLogicObject = GameObject.Find("FXLogic");
+					if (fxLogicObject != null)
+						_aeroFX = fxLogicObject.GetComponent<AerodynamicsFX>();
+				}
+				return _aeroFX;
+			}
+		}
+
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
@@ -104,9 +122,12 @@ namespace AtmosphericFx
 			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);
 
-			// calculate the length multiplier, and send it to the shader
+			// set the current body
+			currentBody = ConfigManager.Instance.GetVesselBody(vessel);
+			UpdateMaterialProperties();
+
+			// calculate the length multiplier
 			fxVessel.lengthMultiplier = GetLengthMultiplier();
-			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
 
 			Logging.Log("Finished loading vessel");
 		}
@@ -221,6 +242,7 @@ namespace AtmosphericFx
 			for (int i = 0; i < vessel.parts.Count; i++)
 			{
 				Part part = vessel.parts[i];
+				if (!IsPartCompatible(part)) continue;
 
 				CreatePartEnvelope(part, material);
 			}
@@ -295,7 +317,7 @@ namespace AtmosphericFx
 				shapeModule.mesh = fxVessel.totalEnvelope;
 
 				ParticleSystem.VelocityOverLifetimeModule velocityModule = ps.velocityOverLifetime;
-				velocityModule.radialMultiplier = 0.7f;
+				velocityModule.radialMultiplier = 1f;
 
 				UpdateParticleRate(ps, 0f, 0f);
 			}
@@ -310,6 +332,17 @@ namespace AtmosphericFx
 
 			ParticleSystem.MinMaxCurve curve = ps.emission.rateOverTime;
 			fxVessel.orgParticleRates.Add(new FloatPair(curve.constantMin, curve.constantMax));
+		}
+
+		/// <summary>
+		/// Kills all particle systems
+		/// </summary>
+		void KillAllParticles()
+		{
+			for (int i = 0; i < fxVessel.allParticles.Count; i++)
+			{
+				UpdateParticleRate(fxVessel.allParticles[i], 0f, 0f);
+			}
 		}
 
 		/// <summary>
@@ -355,7 +388,11 @@ namespace AtmosphericFx
 		void UpdateParticleSystems()
 		{
 			// check if we should actually do the particles
-			if (GetAdjustedEntrySpeed() < 1800f) return;
+			if (GetAdjustedEntrySpeed() < 1800f)
+			{
+				KillAllParticles();
+				return;
+			}
 
 			// rate
 			desiredRate = Mathf.Clamp01((GetAdjustedEntrySpeed() - 1800f) / 600f);
@@ -486,7 +523,7 @@ namespace AtmosphericFx
 			// update particles
 			UpdateParticleSystems();
 
-			// position the camera
+			// position the cameras
 			fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();
 			fxVessel.airstreamCamera.transform.LookAt(vessel.transform.TransformPoint(fxVessel.vesselBoundCenter));
 
@@ -500,6 +537,7 @@ namespace AtmosphericFx
 			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
+			fxVessel.material.SetFloat("_FxState", AeroFX.state);
 			fxVessel.material.SetFloat("_ShadowPower", 0f);
 			fxVessel.material.SetFloat("_VelDotPower", 0f);
 			fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
@@ -526,6 +564,33 @@ namespace AtmosphericFx
 			// camera
 			Transform camTransform = fxVessel.airstreamCamera.transform;
 			DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.magenta);
+		}
+
+		public void UpdateCurrentBody(BodyConfig cfg)
+		{
+			currentBody = cfg;
+			fxVessel.lengthMultiplier = GetLengthMultiplier();
+			UpdateMaterialProperties();
+		}
+
+		/// <summary>
+		/// Updates the colors of the material
+		/// </summary>
+		void UpdateMaterialProperties()
+		{
+			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
+
+			fxVessel.material.SetFloat("_StreakProbability", currentBody.streakProbability);
+			fxVessel.material.SetFloat("_StreakThreshold", currentBody.streakThreshold);
+
+			fxVessel.material.SetColor("_GlowColor", currentBody.colors.glow);
+			fxVessel.material.SetColor("_HotGlowColor", currentBody.colors.glowHot);
+
+			fxVessel.material.SetColor("_PrimaryColor", currentBody.colors.trailPrimary);
+			fxVessel.material.SetColor("_SecondaryColor", currentBody.colors.trailSecondary);
+			fxVessel.material.SetColor("_TertiaryColor", currentBody.colors.trailTertiary);
+
+			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}
 
 		/// <summary>
@@ -632,6 +697,7 @@ namespace AtmosphericFx
 			// convert to m/s
 			float spd = (float)(mach * vesselMach);
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
+			spd *= Mathf.Clamp(AeroFX.FxScalar + 0.26f + currentBody.transitionScalar, 0f, 1f);  // adding 0.26 and body scalar to make the effect start earlier
 
 			// interepolate to the current speed, which smooths the effect out when entering the atmosphere
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * 0.2f);
@@ -653,7 +719,7 @@ namespace AtmosphericFx
 			// or if the base radius is 3 then the result will be 1.8
 			float result = 1f + (baseRadius - 1f) * 0.4f;
 
-			return result;
+			return result * currentBody.lengthMultiplier;
 		}
 
 		/// <summary>
@@ -661,7 +727,7 @@ namespace AtmosphericFx
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
-			return GetEntrySpeed() * fxVessel.speedMultiplier;
+			return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
 		}
 
 		/// <summary>
@@ -680,12 +746,18 @@ namespace AtmosphericFx
 
 		bool IsPartBoundCompatible(Part part)
 		{
-			if (part.Modules.Contains("ModuleParachute"))
-			{
-				return false;
-			}
+			return IsPartCompatible(part) && !(
+				part.Modules.Contains("ModuleParachute")
+			);
+		}
 
-			return true;
+		bool IsPartCompatible(Part part)
+		{
+			return !(
+				part.Modules.Contains("ModuleConformalDecal") || 
+				part.Modules.Contains("ModuleConformalFlag") || 
+				part.Modules.Contains("ModuleConformalText")
+			);
 		}
 	}
 }

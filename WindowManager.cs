@@ -74,9 +74,30 @@ namespace AtmosphericFx
 			GUILayout.Space(20);
 
 			GUILayout.Label($"Active vessel is {vessel.vesselName}");
+			GUILayout.Label($"Current body: {vessel.mainBody.bodyName}");
 			GUILayout.Label($"Vessel radius is {fxModule.fxVessel.vesselBoundRadius}");
 			GUILayout.Label($"Vessel effect length multiplier is {fxModule.fxVessel.lengthMultiplier}");
 			GUILayout.Label($"Vessel entry speed is {fxModule.GetAdjustedEntrySpeed()}");
+			GUILayout.Space(20);
+
+			GUILayout.Label($"AeroFX scalar is {fxModule.AeroFX.FxScalar}");
+			GUILayout.Label($"AeroFX state is {fxModule.AeroFX.state}");
+			GUILayout.Label($"AeroFX airspeed is {fxModule.AeroFX.airSpeed}");
+			GUILayout.Space(20);
+
+			GUILayout.Label("Default config:");
+			GUILayout.Label($"{ConfigManager.Instance.defaultConfig.bodyName}");
+			GUILayout.Label($"{ConfigManager.Instance.defaultConfig.intensity}");
+			GUILayout.Space(20);
+
+			GUILayout.Label("Loaded configs:");
+			foreach (BodyConfig cfg in ConfigManager.Instance.bodyConfigs.Values)
+			{
+				GUILayout.Label($"Name: {cfg.bodyName}");
+				GUILayout.Label($"Intensity: {cfg.intensity}");
+				GUILayout.Label($"Transition scalar: {cfg.transitionScalar}");
+			}
+
 			GUILayout.EndVertical();
 
 			GUI.DragWindow();

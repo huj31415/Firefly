@@ -241,6 +241,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y "$(TargetPath)" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"</PostBuildEvent>
+    <PostBuildEvent>xcopy /y "$(TargetPath)" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"
+xcopy /y "$(TargetDir)\AtmosphericFx.pdb" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,4 @@
 ﻿using KSP.UI.Screens;
-using System.Linq;
 using UnityEngine;
 
 namespace AtmosphericFx
@@ -75,10 +74,9 @@ namespace AtmosphericFx
 			GUILayout.Space(20);
 
 			GUILayout.Label($"Active vessel is {vessel.vesselName}");
-			GUILayout.Label($"Current body: {vessel.mainBody.bodyName}");
 			GUILayout.Label($"Vessel radius is {fxModule.fxVessel.vesselBoundRadius}");
-			GUILayout.Label($"Vessel effect length multiplier is {fxModule.fxVessel.lengthMultiplier}");
-			GUILayout.Label($"Vessel entry speed is {fxModule.GetAdjustedEntrySpeed()}");
+			GUILayout.Label($"Effect length multiplier is {fxModule.fxVessel.lengthMultiplier}");
+			GUILayout.Label($"Final entry speed is {fxModule.GetAdjustedEntrySpeed()}");
 			GUILayout.Space(20);
 
 			GUILayout.Label($"AeroFX scalar is {fxModule.AeroFX.FxScalar}");
@@ -88,17 +86,6 @@ namespace AtmosphericFx
 
 			GUILayout.Label("Current config:");
 			GUILayout.Label($"{fxModule.currentBody.bodyName}");
-			if (GUILayout.Button("Reload configs"))
-			{
-				Logging.Log("Reloading configs...");
-
-				ConfigManager.ModuleManagerPostLoad();
-
-				for (int i = 0; i < EventManager.fxInstances.Count; i++)
-				{
-					EventManager.fxInstances.ElementAt(i).Value.ReloadVessel();
-				}
-			}
 
 			GUILayout.EndVertical();
 			GUI.DragWindow();

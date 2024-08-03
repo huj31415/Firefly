@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static VehiclePhysics.VPPerformanceDisplay;
 
 namespace AtmosphericFx
 {
@@ -217,9 +216,14 @@ namespace AtmosphericFx
 			{
 				Renderer model = models[j];
 
+				// check for wheel flare
+				if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
+
+				// try getting the mesh filter
 				bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
 				if (!hasMeshFilter) continue;
 
+				// try getting the mesh
 				Mesh mesh = filter.sharedMesh;
 				if (mesh == null) continue;
 
@@ -798,6 +802,17 @@ namespace AtmosphericFx
 				part.Modules.Contains("ModuleConformalFlag") || 
 				part.Modules.Contains("ModuleConformalText")
 			);
+		}
+
+		/// <summary>
+		/// Landing gear have flare meshes for some reason, this function checks if a mesh is a flare or not
+		/// </summary>
+		bool CheckWheelFlareModel(Part part, string model)
+		{
+			bool isFlare = model.ToLower().Equals("flare");
+			bool isWheel = part.Modules.Contains("ModuleWheelBase");
+
+			return isFlare && isWheel;
 		}
 	}
 }

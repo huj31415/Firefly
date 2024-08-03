@@ -59,6 +59,10 @@ namespace AtmosphericFx
 		/// </summary>
 		internal void InitAssets()
 		{
+			Logging.Log("Versioning:");
+			Logging.Log(Versioning.VersionAuthor);
+			Logging.Log(Versioning.Version);
+
 			// load shader
 			bool hasShader = TryGetShader("MirageDev/AtmosphericEntry", out Shader sh);
 			if (!hasShader)

@@ -124,10 +124,12 @@ namespace AtmosphericFx
 
 			// set the current body
 			currentBody = ConfigManager.Instance.GetVesselBody(vessel);
-			UpdateMaterialProperties();
 
 			// calculate the length multiplier
 			fxVessel.lengthMultiplier = GetLengthMultiplier();
+
+			// update the material properties
+			UpdateMaterialProperties();
 
 			Logging.Log("Finished loading vessel");
 		}
@@ -388,14 +390,14 @@ namespace AtmosphericFx
 		void UpdateParticleSystems()
 		{
 			// check if we should actually do the particles
-			if (GetAdjustedEntrySpeed() < 1800f)
+			if (GetAdjustedEntrySpeed() < currentBody.particleThreshold)
 			{
 				KillAllParticles();
 				return;
 			}
 
 			// rate
-			desiredRate = Mathf.Clamp01((GetAdjustedEntrySpeed() - 1800f) / 600f);
+			desiredRate = Mathf.Clamp01((GetAdjustedEntrySpeed() - currentBody.particleThreshold) / 600f);
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
@@ -406,25 +408,25 @@ namespace AtmosphericFx
 				UpdateParticleRate(ps, min, max);
 			}
 
-			// direction
+			// world velocity
 			Vector3 direction = vessel.transform.InverseTransformDirection(GetEntryVelocity());
 			Vector3 worldVel = -GetEntryVelocity();
 
 			// sparks
-			fxVessel.sparkParticles.transform.localPosition = direction * -1.2f;
+			fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
 
 			// chunks
-			fxVessel.chunkParticles.transform.localPosition = direction * -1.84f;
+			fxVessel.chunkParticles.transform.localPosition = direction * -1.24f * fxVessel.lengthMultiplier;
 
 			// alternate chunks
-			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f;
+			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f * fxVessel.lengthMultiplier;
 
 			// smoke
-			fxVessel.smokeParticles.transform.localPosition = direction * -3f;
+			fxVessel.smokeParticles.transform.localPosition = direction * -4f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);
-			UpdateParticleVel(fxVessel.chunkParticles, worldVel, 20f, 30f);
+			UpdateParticleVel(fxVessel.chunkParticles, worldVel, 30f, 70f);
 			UpdateParticleVel(fxVessel.alternateChunkParticles, worldVel, 15f, 20f);
 			UpdateParticleVel(fxVessel.smokeParticles, worldVel, 125f, 135f);
 		}
@@ -438,6 +440,7 @@ namespace AtmosphericFx
 
 			isLoaded = false;
 
+			// destroy the fx envelope
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
 				if (fxVessel.fxEnvelope[i] == null) continue;
@@ -445,10 +448,12 @@ namespace AtmosphericFx
 				Destroy(fxVessel.fxEnvelope[i].gameObject);
 			}
 
+			// destroy the misc stuff
 			Destroy(fxVessel.material);
 			Destroy(fxVessel.airstreamCamera.gameObject);
 			Destroy(fxVessel.airstreamTexture);
 
+			// destroy the particles
 			Destroy(fxVessel.sparkParticles.gameObject);
 			Destroy(fxVessel.chunkParticles.gameObject);
 			Destroy(fxVessel.alternateChunkParticles.gameObject);
@@ -516,6 +521,11 @@ namespace AtmosphericFx
 			// debug mode
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
+		}
+
+		public void FixedUpdate()
+		{
+			if (!AssetLoader.Instance.allAssetsLoaded) return;
 
 			// return if the vessel isnt loaded
 			if ((!vessel.loaded) || (!isLoaded)) return;
@@ -532,12 +542,13 @@ namespace AtmosphericFx
 			Matrix4x4 P = GL.GetGPUProjectionMatrix(fxVessel.airstreamCamera.projectionMatrix, true);
 			Matrix4x4 VP = P * V;
 
-			// update the material
+			// update the material with dynamic properties
 			fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
 			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
 			fxVessel.material.SetFloat("_FxState", AeroFX.state);
+			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
 			fxVessel.material.SetFloat("_ShadowPower", 0f);
 			fxVessel.material.SetFloat("_VelDotPower", 0f);
 			fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
@@ -566,6 +577,9 @@ namespace AtmosphericFx
 			DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.magenta);
 		}
 
+		/// <summary>
+		/// Updates the current body, and updates the properties
+		/// </summary>
 		public void UpdateCurrentBody(BodyConfig cfg)
 		{
 			currentBody = cfg;
@@ -700,10 +714,30 @@ namespace AtmosphericFx
 			spd *= Mathf.Clamp(AeroFX.FxScalar + 0.26f + currentBody.transitionScalar, 0f, 1f);  // adding 0.26 and body scalar to make the effect start earlier
 
 			// interepolate to the current speed, which smooths the effect out when entering the atmosphere
-			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * 0.2f);
+			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * 0.3f);
 			lastSpeed = spd;
 
 			return spd;
+		}
+
+		/// <summary>
+		/// Returns the angle of attack
+		/// </summary>
+		float GetAngleOfAttack()
+		{
+			// Code courtesy FAR.
+			Transform refTransform = vessel.GetTransform();
+			Vector3 velVectorNorm = vessel.srf_velocity.normalized;
+
+			Vector3 tmpVec = refTransform.up * Vector3.Dot(refTransform.up, velVectorNorm) + refTransform.forward * Vector3.Dot(refTransform.forward, velVectorNorm);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+			float AoA = Vector3.Dot(tmpVec.normalized, refTransform.forward);
+			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
+			if (float.IsNaN(AoA))
+			{
+				AoA = 0.0f;
+			}
+
+			return AoA;
 		}
 
 		/// <summary>
@@ -744,6 +778,9 @@ namespace AtmosphericFx
 			return vessel.transform.TransformPoint(localPos);
 		}
 
+		/// <summary>
+		/// Is part legible for bound calculations?
+		/// </summary>
 		bool IsPartBoundCompatible(Part part)
 		{
 			return IsPartCompatible(part) && !(
@@ -751,6 +788,9 @@ namespace AtmosphericFx
 			);
 		}
 
+		/// <summary>
+		/// Is part legible for fx envelope calculations?
+		/// </summary>
 		bool IsPartCompatible(Part part)
 		{
 			return !(

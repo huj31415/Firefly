@@ -12,7 +12,7 @@ namespace AtmosphericFx
 
 		// path to the assets
 		public const string iconPath = "AtmosphericFx/Assets/Icons/Icon";
-		public const string bundlePath ="GameData/AtmosphericFx/Assets/Shaders/entryshaderbundle.ksp";
+		public const string bundlePath ="GameData/AtmosphericFx/Assets/Shaders/fxshaders.ksp";
 
 		// loaded icon
 		public Texture2D iconTexture;

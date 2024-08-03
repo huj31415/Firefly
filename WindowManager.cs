@@ -1,4 +1,5 @@
 ﻿using KSP.UI.Screens;
+using System.Linq;
 using UnityEngine;
 
 namespace AtmosphericFx
@@ -85,21 +86,21 @@ namespace AtmosphericFx
 			GUILayout.Label($"AeroFX airspeed is {fxModule.AeroFX.airSpeed}");
 			GUILayout.Space(20);
 
-			GUILayout.Label("Default config:");
-			GUILayout.Label($"{ConfigManager.Instance.defaultConfig.bodyName}");
-			GUILayout.Label($"{ConfigManager.Instance.defaultConfig.intensity}");
-			GUILayout.Space(20);
-
-			GUILayout.Label("Loaded configs:");
-			foreach (BodyConfig cfg in ConfigManager.Instance.bodyConfigs.Values)
+			GUILayout.Label("Current config:");
+			GUILayout.Label($"{fxModule.currentBody.bodyName}");
+			if (GUILayout.Button("Reload configs"))
 			{
-				GUILayout.Label($"Name: {cfg.bodyName}");
-				GUILayout.Label($"Intensity: {cfg.intensity}");
-				GUILayout.Label($"Transition scalar: {cfg.transitionScalar}");
+				Logging.Log("Reloading configs...");
+
+				ConfigManager.ModuleManagerPostLoad();
+
+				for (int i = 0; i < EventManager.fxInstances.Count; i++)
+				{
+					EventManager.fxInstances.ElementAt(i).Value.ReloadVessel();
+				}
 			}
 
 			GUILayout.EndVertical();
-
 			GUI.DragWindow();
 		}
 	}

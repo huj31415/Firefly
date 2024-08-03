@@ -30,6 +30,9 @@ namespace AtmosphericFx
 		// The trail length gets multiplied by this
 		public float lengthMultiplier = 1f;
 
+		// The threshold in m/s for particles to appear
+		public float particleThreshold = 1800f;
+
 		// This gets added to the streak probability
 		public float streakProbability = 0f;
 
@@ -65,8 +68,14 @@ namespace AtmosphericFx
 			Instance.StartLoading();
 		}
 
+		/// <summary>
+		/// Loads every config
+		/// </summary>
 		public void StartLoading()
 		{
+			// clear the dict
+			bodyConfigs.Clear();
+
 			// get the nodes
 			ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_BODY");
 
@@ -132,6 +141,7 @@ namespace AtmosphericFx
 				intensity = ReadConfigValue(node, "intensity", ref isFormatted),
 				transitionScalar = ReadConfigValue(node, "transition_scalar", ref isFormatted),
 				lengthMultiplier = ReadConfigValue(node, "length_multiplier", ref isFormatted),
+				particleThreshold = ReadConfigValue(node, "particle_threshold", ref isFormatted),
 				streakProbability = ReadConfigValue(node, "streak_probability", ref isFormatted),
 				streakThreshold = ReadConfigValue(node, "streak_threshold", ref isFormatted)
 			};
@@ -149,6 +159,9 @@ namespace AtmosphericFx
 			return true;
 		}
 
+		/// <summary>
+		/// Processes the colors node of a body
+		/// </summary>
 		bool ProcessBodyColors(ConfigNode rootNode, out BodyColors body)
 		{
 			body = new BodyColors();
@@ -167,6 +180,9 @@ namespace AtmosphericFx
 			return isFormatted;
 		}
 
+		/// <summary>
+		/// Reads one float value from a node
+		/// </summary>
 		float ReadConfigValue(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Utils.EvaluateFloat(node.GetValue(key), out float result);
@@ -175,6 +191,9 @@ namespace AtmosphericFx
 			return result;
 		}
 
+		/// <summary>
+		/// Reads one HDR color value from a node
+		/// </summary>
 		Color ReadConfigValueHDR(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Utils.EvaluateColorHDR(node.GetValue(key), out Color result);
@@ -207,6 +226,9 @@ namespace AtmosphericFx
 			return hasConfig;
 		}
 
+		/// <summary>
+		/// Gets the body config for a specified vessel
+		/// </summary>
 		public BodyConfig GetVesselBody(Vessel vessel)
 		{
 			TryGetBodyConfig(vessel.mainBody.bodyName, true, out BodyConfig cfg);

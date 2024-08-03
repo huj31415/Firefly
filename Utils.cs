@@ -51,8 +51,6 @@ namespace AtmosphericFx
 			float factor = Mathf.Pow(2f, i);
 			val = new Color(r * factor, g * factor, b * factor);
 
-			Logging.Log($"Color {val}");
-
 			return isFormatted;
 		}
 	}

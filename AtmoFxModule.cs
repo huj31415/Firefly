@@ -63,7 +63,6 @@ namespace AtmosphericFx
 
 		bool debugMode = false;
 
-		float lastSpeed = 0f;
 		float desiredRate;
 
 		public BodyConfig currentBody;
@@ -518,6 +517,16 @@ namespace AtmosphericFx
 			OnVesselUnload();
 		}
 
+		void Debug_ToggleEnvelopes()
+		{
+			bool state = fxVessel.fxEnvelope[0].gameObject.activeSelf;
+
+			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
+			{
+				fxVessel.fxEnvelope[i].gameObject.SetActive(!state);
+			}
+		}
+
 		public void Update()
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
@@ -525,6 +534,7 @@ namespace AtmosphericFx
 			// debug mode
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
+			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
 		}
 
 		public void FixedUpdate()
@@ -708,18 +718,19 @@ namespace AtmosphericFx
 		/// </summary>
 		float GetEntrySpeed()
 		{
-			// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects space and might work differently on other planets)
+			// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
 			double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
 			double vesselMach = vessel.mach;
+
+			// get the stock aeroFX scalar
+			float stockFxScalar = AeroFX.FxScalar;
+			float aeroFxScalar = Mathf.Clamp(stockFxScalar + 0.26f + currentBody.transitionScalar, 0f, 1f);  // adding 0.26 and body scalar to make the effect start earlier
 
 			// convert to m/s
 			float spd = (float)(mach * vesselMach);
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
-			spd *= Mathf.Clamp(AeroFX.FxScalar + 0.26f + currentBody.transitionScalar, 0f, 1f);  // adding 0.26 and body scalar to make the effect start earlier
+			spd *= aeroFxScalar;
 
-			// interepolate to the current speed, which smooths the effect out when entering the atmosphere
-			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * 0.3f);
-			lastSpeed = spd;
 
 			return spd;
 		}

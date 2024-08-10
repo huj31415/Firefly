@@ -425,7 +425,7 @@ namespace AtmosphericFx
 			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f * fxVessel.lengthMultiplier;
 
 			// smoke
-			fxVessel.smokeParticles.transform.localPosition = direction * -4f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
+			fxVessel.smokeParticles.transform.localPosition = direction * -2.4f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);

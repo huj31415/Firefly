@@ -87,6 +87,13 @@ namespace AtmosphericFx
 		/// </summary>
 		void OnVesselLoaded()
 		{
+			// check if the vessel is actually loaded
+			if (!vessel.loaded)
+			{
+				EventManager.UnregisterInstance(vessel.id);
+				return;
+			}
+
 			isLoaded = true;
 			fxVessel = new AtmoFxVessel();
 			Logging.Log("Loading vessel " + vessel.name);
@@ -179,6 +186,14 @@ namespace AtmosphericFx
 		/// </summary>
 		void CreatePartEnvelope(Part part, Material material)
 		{
+			StartCoroutine(CreatePartEnvelopeCoroutine(part, material));
+		}
+
+		/// <summary>
+		/// Coroutine for the CreatePartEnvelope function, spreads the generation over multiple frames
+		/// </summary>
+		IEnumerator CreatePartEnvelopeCoroutine(Part part, Material material)
+		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length > 0)
 			{
@@ -196,10 +211,12 @@ namespace AtmosphericFx
 					fxVessel.fxEnvelope.Add(r);
 
 					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
+
+					yield return null;
 				}
 
 				// skip model search
-				return;
+				yield break;
 			}
 
 			// TODO: Uncomment and make this a setting
@@ -242,7 +259,7 @@ namespace AtmosphericFx
 
 				MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material);
 				fxVessel.fxEnvelope.Add(renderer);
-				
+
 				if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
 			}
 		}
@@ -454,6 +471,8 @@ namespace AtmosphericFx
 		public void OnVesselUnload()
 		{
 			if (!isLoaded) return;
+
+			EventManager.UnregisterInstance(vessel.id);
 
 			isLoaded = false;
 

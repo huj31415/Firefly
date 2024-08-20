@@ -19,6 +19,14 @@ namespace AtmosphericFx
 			else fxInstances.Add(id, instance);
 		}
 
+		/// <summary>
+		/// Unregisters one vessel ID
+		/// </summary>
+		public static void UnregisterInstance(Guid id)
+		{
+			if (fxInstances.ContainsKey(id)) fxInstances.Remove(id);
+		}
+
 		public void Start()
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;

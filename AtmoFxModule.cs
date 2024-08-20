@@ -456,7 +456,7 @@ namespace AtmosphericFx
 			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f * fxVessel.lengthMultiplier;
 
 			// smoke
-			fxVessel.smokeParticles.transform.localPosition = direction * -2.4f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
+			fxVessel.smokeParticles.transform.localPosition = direction * -2f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);
@@ -470,10 +470,6 @@ namespace AtmosphericFx
 		/// </summary>
 		public void OnVesselUnload()
 		{
-			if (!isLoaded) return;
-
-			EventManager.UnregisterInstance(vessel.id);
-
 			isLoaded = false;
 
 			// destroy the fx envelope
@@ -483,15 +479,15 @@ namespace AtmosphericFx
 			}
 
 			// destroy the misc stuff
-			DestroyConditional(fxVessel.material);
-			DestroyConditional(fxVessel.airstreamCamera.gameObject);
-			DestroyConditional(fxVessel.airstreamTexture);
+			if (fxVessel.material != null) Destroy(fxVessel.material);
+			if (fxVessel.airstreamCamera != null) Destroy(fxVessel.airstreamCamera.gameObject);
+			if (fxVessel.airstreamTexture != null) Destroy(fxVessel.airstreamTexture);
 
 			// destroy the particles
-			DestroyConditional(fxVessel.sparkParticles.gameObject);
-			DestroyConditional(fxVessel.chunkParticles.gameObject);
-			DestroyConditional(fxVessel.alternateChunkParticles.gameObject);
-			DestroyConditional(fxVessel.smokeParticles.gameObject);
+			if (fxVessel.sparkParticles != null) Destroy(fxVessel.sparkParticles.gameObject);
+			if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
+			if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
+			if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
 
 			Logging.Log("Unloaded vessel " + vessel.vesselName);
 		}

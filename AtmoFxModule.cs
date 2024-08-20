@@ -108,6 +108,9 @@ namespace AtmosphericFx
 			fxVessel.airstreamTexture.Create();
 			fxVessel.airstreamCamera.targetTexture = fxVessel.airstreamTexture;
 
+			// reset part cache
+			ResetPartModelCache();
+
 			// create the fx envelopes
 			UpdateFxEnvelopes(material);
 			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
@@ -130,6 +133,14 @@ namespace AtmosphericFx
 			UpdateMaterialProperties();
 
 			Logging.Log("Finished loading vessel");
+		}
+
+		void ResetPartModelCache()
+		{
+			for (int i = 0; i < vessel.parts.Count; i++)
+			{
+				vessel.parts[i].ResetModelRenderersCache();
+			}
 		}
 
 		/// <summary>
@@ -217,6 +228,9 @@ namespace AtmosphericFx
 
 				// check for wheel flare
 				if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
+
+				// check for layers
+				if (CheckLayerModel(model.transform)) continue;
 
 				// try getting the mesh filter
 				bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
@@ -446,21 +460,19 @@ namespace AtmosphericFx
 			// destroy the fx envelope
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
-				if (fxVessel.fxEnvelope[i] == null) continue;
-
-				Destroy(fxVessel.fxEnvelope[i].gameObject);
+				DestroyConditional(fxVessel.fxEnvelope[i].gameObject);
 			}
 
 			// destroy the misc stuff
-			Destroy(fxVessel.material);
-			Destroy(fxVessel.airstreamCamera.gameObject);
-			Destroy(fxVessel.airstreamTexture);
+			DestroyConditional(fxVessel.material);
+			DestroyConditional(fxVessel.airstreamCamera.gameObject);
+			DestroyConditional(fxVessel.airstreamTexture);
 
 			// destroy the particles
-			Destroy(fxVessel.sparkParticles.gameObject);
-			Destroy(fxVessel.chunkParticles.gameObject);
-			Destroy(fxVessel.alternateChunkParticles.gameObject);
-			Destroy(fxVessel.smokeParticles.gameObject);
+			DestroyConditional(fxVessel.sparkParticles.gameObject);
+			DestroyConditional(fxVessel.chunkParticles.gameObject);
+			DestroyConditional(fxVessel.alternateChunkParticles.gameObject);
+			DestroyConditional(fxVessel.smokeParticles.gameObject);
 
 			Logging.Log("Unloaded vessel " + vessel.vesselName);
 		}
@@ -824,6 +836,24 @@ namespace AtmosphericFx
 			bool isWheel = part.Modules.Contains("ModuleWheelBase");
 
 			return isFlare && isWheel;
+		}
+
+		/// <summary>
+		/// Check if a model's layer is illegal
+		/// </summary>
+		bool CheckLayerModel(Transform model)
+		{
+			return (
+				model.gameObject.layer == 1
+			);
+		}
+
+		/// <summary>
+		/// Destroy an object, only if it exists
+		/// </summary>
+		void DestroyConditional(Object o)
+		{
+			if (o != null) Destroy(o);
 		}
 	}
 }

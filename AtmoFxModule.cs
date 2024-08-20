@@ -460,7 +460,7 @@ namespace AtmosphericFx
 			// destroy the fx envelope
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
-				DestroyConditional(fxVessel.fxEnvelope[i].gameObject);
+				if (fxVessel.fxEnvelope[i] != null) Destroy(fxVessel.fxEnvelope[i].gameObject);
 			}
 
 			// destroy the misc stuff
@@ -677,6 +677,9 @@ namespace AtmosphericFx
 					bool hasFilter = renderers[r].TryGetComponent(out MeshFilter meshFilter);
 					if (!hasFilter) continue;
 					if (meshFilter.mesh == null) continue;
+
+					// check if the mesh is legal
+					if (CheckLayerModel(renderers[r].transform)) continue;
 
 					// get the corners of the mesh
 					//meshFilter.mesh.RecalculateBounds();

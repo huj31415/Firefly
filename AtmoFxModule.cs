@@ -87,8 +87,8 @@ namespace AtmosphericFx
 		/// </summary>
 		void OnVesselLoaded()
 		{
-			// check if the vessel is actually loaded
-			if (!vessel.loaded)
+			// check if the vessel is actually loaded, and if it has any parts
+			if ((!vessel.loaded) || vessel.parts.Count < 1)
 			{
 				EventManager.UnregisterInstance(vessel.id);
 				return;

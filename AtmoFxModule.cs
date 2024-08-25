@@ -645,6 +645,8 @@ namespace AtmosphericFx
 			fxVessel.material.SetColor("_SecondaryColor", currentBody.colors.trailSecondary);
 			fxVessel.material.SetColor("_TertiaryColor", currentBody.colors.trailTertiary);
 
+			fxVessel.material.SetColor("_LayerColor", currentBody.colors.wrapLayer);
+
 			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}
 
@@ -753,14 +755,36 @@ namespace AtmosphericFx
 			double vesselMach = vessel.mach;
 
 			// get the stock aeroFX scalar
-			float stockFxScalar = AeroFX.FxScalar;
-			float aeroFxScalar = Mathf.Clamp(stockFxScalar + 0.26f + currentBody.transitionScalar, 0f, 1f);  // adding 0.26 and body scalar to make the effect start earlier
+			float aeroFxScalar = AeroFX.FxScalar + 0.26f;  // adding 0.26 and body scalar to make the effect start earlier
+
+			// apply the body config modifiers
+			for (int i = 0; i < currentBody.transitionModifiers.Length; i++)
+			{
+				TransitionModifier mod = currentBody.transitionModifiers[i];
+
+				switch (mod.operation)
+				{
+					case TransitionModifierMode.ADD:
+						aeroFxScalar += mod.value;
+						break;
+					case TransitionModifierMode.SUBTRACT:
+						aeroFxScalar -= mod.value;
+						break;
+					case TransitionModifierMode.MULTIPLY:
+						aeroFxScalar *= mod.value;
+						break;
+					case TransitionModifierMode.DIVIDE:
+						aeroFxScalar /= mod.value;
+						break;
+					default:
+						break;
+				}
+			}
 
 			// convert to m/s
 			float spd = (float)(mach * vesselMach);
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
 			spd *= aeroFxScalar;
-
 
 			return spd;
 		}

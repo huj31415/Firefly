@@ -1,8 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace AtmosphericFx
 {
+	public enum TransitionModifierMode
+	{
+		ADD = 0,
+		SUBTRACT = 1,
+		MULTIPLY = 2,
+		DIVIDE = 3
+	}
+
+	public struct TransitionModifier
+	{
+		public TransitionModifierMode operation;
+		public float value;
+	}
+
 	public struct BodyColors
 	{
 		public Color glow;
@@ -11,6 +26,8 @@ namespace AtmosphericFx
 		public Color trailPrimary;
 		public Color trailSecondary;
 		public Color trailTertiary;
+
+		public Color wrapLayer;
 
 		public Color shockwave;
 	}
@@ -22,8 +39,8 @@ namespace AtmosphericFx
 		// The entry speed gets multiplied by this before getting sent to the shader
 		public float intensity = 1f;
 
-		// This gets added to the AeroFX scalar value
-		public float transitionScalar = 0f;
+		// This is used to modify the AeroFX scalar before getting sent off
+		public TransitionModifier[] transitionModifiers;
 
 		// The trail length gets multiplied by this
 		public float lengthMultiplier = 1f;
@@ -137,12 +154,14 @@ namespace AtmosphericFx
 				bodyName = bodyName,
 
 				intensity = ReadConfigValue(node, "intensity", ref isFormatted),
-				transitionScalar = ReadConfigValue(node, "transition_scalar", ref isFormatted),
 				lengthMultiplier = ReadConfigValue(node, "length_multiplier", ref isFormatted),
 				particleThreshold = ReadConfigValue(node, "particle_threshold", ref isFormatted),
 				streakProbability = ReadConfigValue(node, "streak_probability", ref isFormatted),
 				streakThreshold = ReadConfigValue(node, "streak_threshold", ref isFormatted)
 			};
+
+			// read the transition modifiers
+			isFormatted = isFormatted && ProcessTransitionModifiers(node, out body.transitionModifiers);
 
 			// read the colors
 			isFormatted = isFormatted && ProcessBodyColors(node, out body.colors);
@@ -173,7 +192,30 @@ namespace AtmosphericFx
 			body.trailPrimary = ReadConfigValueHDR(colorNode, "trail_primary", ref isFormatted);
 			body.trailSecondary = ReadConfigValueHDR(colorNode, "trail_secondary", ref isFormatted);
 			body.trailTertiary = ReadConfigValueHDR(colorNode, "trail_tertiary", ref isFormatted);
+			body.wrapLayer = ReadConfigValueHDR(colorNode, "wrap_layer", ref isFormatted);
 			body.shockwave = ReadConfigValueHDR(colorNode, "shockwave", ref isFormatted);
+
+			return isFormatted;
+		}
+
+		/// <summary>
+		/// Processes the transition modifiers
+		/// </summary>
+		bool ProcessTransitionModifiers(ConfigNode rootNode, out TransitionModifier[] mods)
+		{
+			mods = null;
+
+			ConfigNode[] nodes = rootNode.GetNodes("TransitionModifier");
+			if (nodes.Length == 0) return false;
+			mods = new TransitionModifier[nodes.Length];
+
+			bool isFormatted = true;
+
+			for (int i = 0; i < nodes.Length; i++)
+			{
+				mods[i].operation = ReadModifierMode(nodes[i], "operation", ref isFormatted);
+				mods[i].value = ReadConfigValue(nodes[i], "value", ref isFormatted);
+			}
 
 			return isFormatted;
 		}
@@ -201,12 +243,19 @@ namespace AtmosphericFx
 		}
 
 		/// <summary>
+		/// Reads the transition modifier mode enum
+		/// </summary>
+		TransitionModifierMode ReadModifierMode(ConfigNode node, string key, ref bool isFormatted)
+		{
+			bool success = Enum.TryParse(node.GetValue(key), out TransitionModifierMode result);
+			isFormatted = isFormatted && success;
+
+			return result;
+		}
+
+		/// <summary>
 		/// Tries getting the body config for a specified body name, and fallbacks if desired
 		/// </summary>
-		/// <param name="bodyName">Name of the body</param>
-		/// <param name="fallback">Should the function fallback?</param>
-		/// <param name="cfg">The output config</param>
-		/// <returns>Returns false if the function didn't find a loaded config for the specified name, true otherwise</returns>
 		public bool TryGetBodyConfig(string bodyName, bool fallback, out BodyConfig cfg)
 		{
 			bool hasConfig = bodyConfigs.ContainsKey(bodyName);

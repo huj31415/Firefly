@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace AtmosphericFx
@@ -14,7 +15,13 @@ namespace AtmosphericFx
 
 	public struct TransitionModifier
 	{
+		// Smaller order values get ran first
+		public float order;
+
+		// The operation to use
 		public TransitionModifierMode operation;
+
+		// The value
 		public float value;
 	}
 
@@ -213,9 +220,12 @@ namespace AtmosphericFx
 
 			for (int i = 0; i < nodes.Length; i++)
 			{
+				mods[i].order = ReadConfigValue(nodes[i], "order", ref isFormatted);
 				mods[i].operation = ReadModifierMode(nodes[i], "operation", ref isFormatted);
 				mods[i].value = ReadConfigValue(nodes[i], "value", ref isFormatted);
 			}
+
+			mods = mods.OrderBy(m => m.order).ToArray();
 
 			return isFormatted;
 		}

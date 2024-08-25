@@ -213,7 +213,6 @@ namespace AtmosphericFx
 			mods = null;
 
 			ConfigNode[] nodes = rootNode.GetNodes("TransitionModifier");
-			if (nodes.Length == 0) return false;
 			mods = new TransitionModifier[nodes.Length];
 
 			bool isFormatted = true;

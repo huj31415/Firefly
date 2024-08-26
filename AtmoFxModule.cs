@@ -64,6 +64,7 @@ namespace AtmosphericFx
 		bool debugMode = false;
 
 		float desiredRate;
+		float lastSpeed;
 
 		public BodyConfig currentBody;
 
@@ -764,16 +765,16 @@ namespace AtmosphericFx
 
 				switch (mod.operation)
 				{
-					case TransitionModifierMode.ADD:
+					case ModifierOperation.ADD:
 						aeroFxScalar += mod.value;
 						break;
-					case TransitionModifierMode.SUBTRACT:
+					case ModifierOperation.SUBTRACT:
 						aeroFxScalar -= mod.value;
 						break;
-					case TransitionModifierMode.MULTIPLY:
+					case ModifierOperation.MULTIPLY:
 						aeroFxScalar *= mod.value;
 						break;
-					case TransitionModifierMode.DIVIDE:
+					case ModifierOperation.DIVIDE:
 						aeroFxScalar /= mod.value;
 						break;
 					default:
@@ -785,6 +786,9 @@ namespace AtmosphericFx
 			float spd = (float)(mach * vesselMach);
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
 			spd *= aeroFxScalar;
+			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime);
+
+			lastSpeed = spd;
 
 			return spd;
 		}

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace AtmosphericFx
 {
-	public enum TransitionModifierMode
+	public enum ModifierOperation
 	{
 		ADD = 0,
 		SUBTRACT = 1,
@@ -19,7 +19,7 @@ namespace AtmosphericFx
 		public float order;
 
 		// The operation to use
-		public TransitionModifierMode operation;
+		public ModifierOperation operation;
 
 		// The value
 		public float value;
@@ -254,9 +254,9 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Reads the transition modifier mode enum
 		/// </summary>
-		TransitionModifierMode ReadModifierMode(ConfigNode node, string key, ref bool isFormatted)
+		ModifierOperation ReadModifierMode(ConfigNode node, string key, ref bool isFormatted)
 		{
-			bool success = Enum.TryParse(node.GetValue(key), out TransitionModifierMode result);
+			bool success = Enum.TryParse(node.GetValue(key), out ModifierOperation result);
 			isFormatted = isFormatted && success;
 
 			return result;

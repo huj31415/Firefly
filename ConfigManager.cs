@@ -52,6 +52,12 @@ namespace AtmosphericFx
 		// The trail length gets multiplied by this
 		public float lengthMultiplier = 1f;
 
+		// The trail opacity gets multiplied by this
+		public float opacityMultiplier = 1f;
+
+		// The wrap layer's fresnel effect is modified by this
+		public float wrapFresnelModifier = 1f;
+
 		// The threshold in m/s for particles to appear
 		public float particleThreshold = 1800f;
 
@@ -162,6 +168,8 @@ namespace AtmosphericFx
 
 				intensity = ReadConfigValue(node, "intensity", ref isFormatted),
 				lengthMultiplier = ReadConfigValue(node, "length_multiplier", ref isFormatted),
+				opacityMultiplier = ReadConfigValue(node, "opacity_multiplier", ref isFormatted),
+				wrapFresnelModifier = ReadConfigValue(node, "wrap_fresnel_modifier", ref isFormatted),
 				particleThreshold = ReadConfigValue(node, "particle_threshold", ref isFormatted),
 				streakProbability = ReadConfigValue(node, "streak_probability", ref isFormatted),
 				streakThreshold = ReadConfigValue(node, "streak_threshold", ref isFormatted)

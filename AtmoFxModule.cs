@@ -635,6 +635,8 @@ namespace AtmosphericFx
 		void UpdateMaterialProperties()
 		{
 			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
+			fxVessel.material.SetFloat("_OpacityMultiplier", currentBody.opacityMultiplier);
+			fxVessel.material.SetFloat("_WrapFresnelModifier", currentBody.wrapFresnelModifier);
 
 			fxVessel.material.SetFloat("_StreakProbability", currentBody.streakProbability);
 			fxVessel.material.SetFloat("_StreakThreshold", currentBody.streakThreshold);

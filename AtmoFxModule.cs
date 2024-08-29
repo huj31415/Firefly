@@ -163,7 +163,8 @@ namespace AtmosphericFx
 
 			envelope.localPosition = Vector3.zero;
 			envelope.localRotation = Quaternion.identity;
-			envelope.localScale = new Vector3(1.05f, 1.07f, 1.05f);
+			envelope.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+			//envelope.localScale = new Vector3(1.05f, 1.07f, 1.05f);
 
 			// add mesh filter and renderer to the envelope
 			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
@@ -176,7 +177,8 @@ namespace AtmosphericFx
 
 			// set model-specific properties
 			MaterialPropertyBlock properties = new MaterialPropertyBlock();
-			properties.SetVector("_ModelScale", parent.lossyScale);
+			//properties.SetVector("_ModelScale", parent.lossyScale);
+			properties.SetVector("_ModelScale", envelope.lossyScale);
 			renderer.SetPropertyBlock(properties);
 
 			return renderer;

@@ -241,7 +241,9 @@
     <Compile Include="WindowManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReentryShader.shader" />
+    <None Include="..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ReentryShader.shader">
+      <Link>ReentryShader.shader</Link>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

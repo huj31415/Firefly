@@ -163,8 +163,7 @@ namespace AtmosphericFx
 
 			envelope.localPosition = Vector3.zero;
 			envelope.localRotation = Quaternion.identity;
-			envelope.localScale = new Vector3(1.2f, 1.2f, 1.2f);
-			//envelope.localScale = new Vector3(1.05f, 1.07f, 1.05f);
+			envelope.localScale = new Vector3(1.05f, 1.07f, 1.05f);
 
 			// add mesh filter and renderer to the envelope
 			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
@@ -177,8 +176,7 @@ namespace AtmosphericFx
 
 			// set model-specific properties
 			MaterialPropertyBlock properties = new MaterialPropertyBlock();
-			//properties.SetVector("_ModelScale", parent.lossyScale);
-			properties.SetVector("_ModelScale", envelope.lossyScale);
+			properties.SetVector("_ModelScale", parent.lossyScale);
 			renderer.SetPropertyBlock(properties);
 
 			return renderer;
@@ -561,6 +559,9 @@ namespace AtmosphericFx
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
 
+			if (Camera.main != null && WindowManager.Instance != null) Camera.main.allowHDR = WindowManager.Instance.tgl_Hdr;
+			if (InternalCamera.Instance != null && WindowManager.Instance != null) InternalCamera.Instance.GetComponent<Camera>().allowHDR = WindowManager.Instance.tgl_Hdr;
+
 			// debug mode
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
@@ -591,6 +592,8 @@ namespace AtmosphericFx
 			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
+			fxVessel.material.SetInt("_UnityEditor", 0);
+			fxVessel.material.SetInt("_Hdr", WindowManager.Instance.tgl_Hdr ? 1 : 0);
 			fxVessel.material.SetFloat("_FxState", AeroFX.state);
 			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
 			fxVessel.material.SetFloat("_ShadowPower", 0f);
@@ -651,6 +654,7 @@ namespace AtmosphericFx
 			fxVessel.material.SetColor("_TertiaryColor", currentBody.colors.trailTertiary);
 
 			fxVessel.material.SetColor("_LayerColor", currentBody.colors.wrapLayer);
+			fxVessel.material.SetColor("_LayerStreakColor", currentBody.colors.wrapStreak);
 
 			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}

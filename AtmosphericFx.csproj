@@ -240,6 +240,9 @@
     <Compile Include="Versioning.cs" />
     <Compile Include="WindowManager.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="ReentryShader.shader" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y "$(TargetPath)" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"

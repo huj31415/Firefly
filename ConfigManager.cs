@@ -35,6 +35,7 @@ namespace AtmosphericFx
 		public Color trailTertiary;
 
 		public Color wrapLayer;
+		public Color wrapStreak;
 
 		public Color shockwave;
 	}
@@ -71,12 +72,22 @@ namespace AtmosphericFx
 		public BodyColors colors = new BodyColors();
 	}
 
+	public class PlanetPackConfig
+	{
+		// The speed gets multiplied by this after applying body configs
+		public float speedMultiplier = 1f;
+
+		// Affected bodies
+		public string[] affectedBodies;
+	}
+
 	[KSPAddon(KSPAddon.Startup.Instantly, true)]
 	public class ConfigManager : MonoBehaviour
 	{
 		public static ConfigManager Instance { get; private set; }
 
 		public Dictionary<string, BodyConfig> bodyConfigs = new Dictionary<string, BodyConfig>();
+		public List<PlanetPackConfig> planetPackConfigs = new List<PlanetPackConfig>();
 
 		public BodyConfig defaultConfig;
 
@@ -97,23 +108,38 @@ namespace AtmosphericFx
 		}
 
 		/// <summary>
-		/// Loads every config
+		/// Loads every planet pack and body config
 		/// </summary>
 		public void StartLoading()
 		{
-			// clear the dict
+			// clear the dict and list
 			bodyConfigs.Clear();
+			planetPackConfigs.Clear();
+
+			// get the planet packs
+			ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_PLANET_PACK");
+
+			// check if there's actually anything to load
+			if (nodes.Length > 0)
+			{
+				for (int i = 0; i < nodes.Length; i++)
+				{
+					ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
+
+					planetPackConfigs.Add(cfg);
+				}
+			}
 
 			// get the nodes
-			ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_BODY");
+			nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_BODY");
 
 			// check if there's actually anything to load
 			if (nodes.Length > 0)
 			{
 				// iterate over every node and store the data
-				foreach (ConfigNode node in nodes)
+				for (int i = 0; i < nodes.Length; i++)
 				{
-					bool success = ProcessSingleNode(node, out BodyConfig body);
+					bool success = ProcessSingleNode(nodes[i], out BodyConfig body);
 
 					// couldn't load the config
 					if (!success)
@@ -188,6 +214,52 @@ namespace AtmosphericFx
 				return false;
 			}
 
+			// apply planet pack configs
+			for (int i = 0; i < planetPackConfigs.Count; i++)
+			{
+				// check if the body should be affected
+				if (planetPackConfigs[i].affectedBodies.Contains(bodyName))
+				{
+					body.intensity *= planetPackConfigs[i].speedMultiplier;
+				}
+			}
+
+			return true;
+		}
+
+		/// <summary>
+		/// Processes planet pack nodes
+		/// </summary>
+		bool ProcessPlanetPackNode(ConfigNode node, out PlanetPackConfig cfg)
+		{
+			Logging.Log($"Loading planet pack config");
+
+			// create the config
+			bool isFormatted = true;
+			cfg = new PlanetPackConfig
+			{
+				speedMultiplier = ReadConfigValue(node, "speed_multiplier", ref isFormatted),
+			};
+
+			// read the affected body array
+			ConfigNode affectedBodies = node.GetNode("AffectedBodies");
+			string[] array = affectedBodies.GetValues("item");
+
+			if (array.Length < 1)
+			{
+				Logging.Log("Planet pack config has zero affected bodies, it will not have any effect");
+				return false;
+			}
+
+			cfg.affectedBodies = array;
+
+			// is the config formatted correctly?
+			if (!isFormatted)
+			{
+				Logging.Log($"Planet pack config is not formatted correctly: {node.name}");
+				return false;
+			}
+
 			return true;
 		}
 
@@ -202,13 +274,14 @@ namespace AtmosphericFx
 			bool isFormatted = rootNode.TryGetNode("Color", ref colorNode);
 			if (!isFormatted) return false;
 
-			body.glow = ReadConfigValueHDR(colorNode, "glow", ref isFormatted);
-			body.glowHot = ReadConfigValueHDR(colorNode, "glow_hot", ref isFormatted);
-			body.trailPrimary = ReadConfigValueHDR(colorNode, "trail_primary", ref isFormatted);
-			body.trailSecondary = ReadConfigValueHDR(colorNode, "trail_secondary", ref isFormatted);
-			body.trailTertiary = ReadConfigValueHDR(colorNode, "trail_tertiary", ref isFormatted);
-			body.wrapLayer = ReadConfigValueHDR(colorNode, "wrap_layer", ref isFormatted);
-			body.shockwave = ReadConfigValueHDR(colorNode, "shockwave", ref isFormatted);
+			body.glow = ReadConfigColorHDR(colorNode, "glow", ref isFormatted);
+			body.glowHot = ReadConfigColorHDR(colorNode, "glow_hot", ref isFormatted);
+			body.trailPrimary = ReadConfigColorHDR(colorNode, "trail_primary", ref isFormatted);
+			body.trailSecondary = ReadConfigColorHDR(colorNode, "trail_secondary", ref isFormatted);
+			body.trailTertiary = ReadConfigColorHDR(colorNode, "trail_tertiary", ref isFormatted);
+			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", ref isFormatted);
+			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", ref isFormatted);
+			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", ref isFormatted);
 
 			return isFormatted;
 		}
@@ -228,7 +301,7 @@ namespace AtmosphericFx
 			for (int i = 0; i < nodes.Length; i++)
 			{
 				mods[i].order = ReadConfigValue(nodes[i], "order", ref isFormatted);
-				mods[i].operation = ReadModifierMode(nodes[i], "operation", ref isFormatted);
+				mods[i].operation = ReadConfigModifierOperation(nodes[i], "operation", ref isFormatted);
 				mods[i].value = ReadConfigValue(nodes[i], "value", ref isFormatted);
 			}
 
@@ -251,7 +324,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Reads one HDR color value from a node
 		/// </summary>
-		Color ReadConfigValueHDR(ConfigNode node, string key, ref bool isFormatted)
+		Color ReadConfigColorHDR(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Utils.EvaluateColorHDR(node.GetValue(key), out Color result);
 			isFormatted = isFormatted && success;
@@ -262,7 +335,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Reads the transition modifier mode enum
 		/// </summary>
-		ModifierOperation ReadModifierMode(ConfigNode node, string key, ref bool isFormatted)
+		ModifierOperation ReadConfigModifierOperation(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Enum.TryParse(node.GetValue(key), out ModifierOperation result);
 			isFormatted = isFormatted && success;

@@ -6,11 +6,21 @@ namespace AtmosphericFx
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	internal class WindowManager : MonoBehaviour
 	{
+		public static WindowManager Instance { get; private set; }
+
 		ApplicationLauncherButton appButton;
 		Rect windowPosition = new Rect(0, 0, 300, 100);
 
 		bool uiHidden = false;
 		bool appToggle = false;
+
+		// Toggle values
+		public bool tgl_Hdr = false;
+		
+		public void Awake()
+		{
+			Instance = this;
+		}
 
 		public void Start()
 		{
@@ -36,7 +46,7 @@ namespace AtmosphericFx
 
 		public void OnGUI()
 		{
-			if (uiHidden || !appToggle) return;
+			if (uiHidden || !appToggle || !FlightGlobals.ActiveVessel.loaded) return;
 
 			windowPosition = GUILayout.Window(10, windowPosition, OnWindow, "Atmospheric Effects Configuration");
 		}
@@ -86,6 +96,9 @@ namespace AtmosphericFx
 
 			GUILayout.Label("Current config:");
 			GUILayout.Label($"{fxModule.currentBody.bodyName}");
+			GUILayout.Space(20);
+
+			tgl_Hdr = GUILayout.Toggle(tgl_Hdr, "HDR on/off");
 
 			GUILayout.EndVertical();
 			GUI.DragWindow();

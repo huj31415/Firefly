@@ -1,5 +1,6 @@
 ﻿using KSP.UI.Screens;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace AtmosphericFx
 {
@@ -46,7 +47,7 @@ namespace AtmosphericFx
 
 		public void OnGUI()
 		{
-			if (uiHidden || !appToggle || !FlightGlobals.ActiveVessel.loaded) return;
+			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
 
 			windowPosition = GUILayout.Window(10, windowPosition, OnWindow, "Atmospheric Effects Configuration");
 		}
@@ -96,9 +97,12 @@ namespace AtmosphericFx
 
 			GUILayout.Label("Current config:");
 			GUILayout.Label($"{fxModule.currentBody.bodyName}");
-			GUILayout.Space(20);
 
-			tgl_Hdr = GUILayout.Toggle(tgl_Hdr, "HDR on/off");
+			GUILayout.Space(20);
+			GUILayout.BeginHorizontal();
+			tgl_Hdr = GUILayout.Toggle(tgl_Hdr, "HDR Override");
+			if (GUILayout.Button("Apply override")) CameraManager.Instance.OverrideHDR(tgl_Hdr);
+			GUILayout.EndHorizontal();
 
 			GUILayout.EndVertical();
 			GUI.DragWindow();

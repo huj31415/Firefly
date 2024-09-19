@@ -23,6 +23,9 @@ namespace AtmosphericFx
 
 		// The value
 		public float value;
+
+		// Is the modifier dependent on the stock fx - if true then the value gets multiplied by the inverted stock fx scalar
+		public bool stockfxDependent;
 	}
 
 	public struct BodyColors
@@ -303,6 +306,7 @@ namespace AtmosphericFx
 				mods[i].order = ReadConfigValue(nodes[i], "order", ref isFormatted);
 				mods[i].operation = ReadConfigModifierOperation(nodes[i], "operation", ref isFormatted);
 				mods[i].value = ReadConfigValue(nodes[i], "value", ref isFormatted);
+				mods[i].stockfxDependent = ReadConfigBoolean(nodes[i], "stockfx_dependent", ref isFormatted);
 			}
 
 			mods = mods.OrderBy(m => m.order).ToArray();
@@ -316,6 +320,17 @@ namespace AtmosphericFx
 		float ReadConfigValue(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Utils.EvaluateFloat(node.GetValue(key), out float result);
+			isFormatted = isFormatted && success;
+
+			return result;
+		}
+
+		/// <summary>
+		/// Reads one boolean value from a node
+		/// </summary>
+		bool ReadConfigBoolean(ConfigNode node, string key, ref bool isFormatted)
+		{
+			bool success = Utils.EvaluateBool(node.GetValue(key), out bool result);
 			isFormatted = isFormatted && success;
 
 			return result;

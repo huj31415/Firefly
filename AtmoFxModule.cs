@@ -154,7 +154,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Creates one envelope mesh, with a given parent, mesh and material
 		/// </summary>
-		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material)
+		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material, bool premade)
 		{
 			// create envelope object
 			Transform envelope = new GameObject("atmofx_envelope_generated").transform;
@@ -163,7 +163,7 @@ namespace AtmosphericFx
 
 			envelope.localPosition = Vector3.zero;
 			envelope.localRotation = Quaternion.identity;
-			envelope.localScale = new Vector3(1.05f, 1.07f, 1.05f);
+			envelope.localScale = new Vector3(premade ? 1f : 1.05f, premade ? 1f : 1.07f, premade ? 1f : 1.05f);
 
 			// add mesh filter and renderer to the envelope
 			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
@@ -208,7 +208,7 @@ namespace AtmosphericFx
 					if (fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) parentRenderer.enabled = false;
 
 					// needs to be a separate transform, otherwise it breaks for some reason
-					MeshRenderer r = InstantiateEnvelopeMesh(fxEnvelopes[j], parentFilter.mesh, material);
+					MeshRenderer r = InstantiateEnvelopeMesh(fxEnvelopes[j], parentFilter.mesh, material, true);
 					fxVessel.fxEnvelope.Add(r);
 
 					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
@@ -258,7 +258,7 @@ namespace AtmosphericFx
 				Mesh mesh = filter.sharedMesh;
 				if (mesh == null) continue;
 
-				MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material);
+				MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
 				fxVessel.fxEnvelope.Add(renderer);
 
 				if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
@@ -559,9 +559,6 @@ namespace AtmosphericFx
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
 
-			if (Camera.main != null && WindowManager.Instance != null) Camera.main.allowHDR = WindowManager.Instance.tgl_Hdr;
-			if (InternalCamera.Instance != null && WindowManager.Instance != null) InternalCamera.Instance.GetComponent<Camera>().allowHDR = WindowManager.Instance.tgl_Hdr;
-
 			// debug mode
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
@@ -593,7 +590,7 @@ namespace AtmosphericFx
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
 			fxVessel.material.SetInt("_UnityEditor", 0);
-			fxVessel.material.SetInt("_Hdr", WindowManager.Instance.tgl_Hdr ? 1 : 0);
+			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.isHdr ? 1 : 0);
 			fxVessel.material.SetFloat("_FxState", AeroFX.state);
 			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
 			fxVessel.material.SetFloat("_ShadowPower", 0f);
@@ -771,19 +768,21 @@ namespace AtmosphericFx
 			{
 				TransitionModifier mod = currentBody.transitionModifiers[i];
 
+				float value = mod.value * (mod.stockfxDependent ? (1f - AeroFX.FxScalar) : 1f);
+
 				switch (mod.operation)
 				{
 					case ModifierOperation.ADD:
-						aeroFxScalar += mod.value;
+						aeroFxScalar += value;
 						break;
 					case ModifierOperation.SUBTRACT:
-						aeroFxScalar -= mod.value;
+						aeroFxScalar -= value;
 						break;
 					case ModifierOperation.MULTIPLY:
-						aeroFxScalar *= mod.value;
+						aeroFxScalar *= Mathf.Max(value, mod.stockfxDependent ? 1f : 0f);  // if the effect is stockfx dependent then clamp it to not go below 1
 						break;
 					case ModifierOperation.DIVIDE:
-						aeroFxScalar /= mod.value;
+						aeroFxScalar /= value;
 						break;
 					default:
 						break;
@@ -900,14 +899,6 @@ namespace AtmosphericFx
 			return (
 				model.gameObject.layer == 1
 			);
-		}
-
-		/// <summary>
-		/// Destroy an object, only if it exists
-		/// </summary>
-		void DestroyConditional(Object o)
-		{
-			if (o != null) Destroy(o);
 		}
 	}
 }

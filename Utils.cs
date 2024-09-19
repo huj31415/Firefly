@@ -25,6 +25,11 @@ namespace AtmosphericFx
 			return float.TryParse(text, out val);
 		}
 
+		public static bool EvaluateBool(string text, out bool val)
+		{
+			return bool.TryParse(text, out val);
+		}
+
 		public static bool EvaluateColorHDR(string text, out Color val)
 		{
 			bool isFormatted = true;

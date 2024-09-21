@@ -831,7 +831,7 @@ namespace AtmosphericFx
 			// gets the final result
 			// for example, if the base radius is 2 then the result will be 1.4
 			// or if the base radius is 3 then the result will be 1.8
-			float result = 1f + (baseRadius - 1f) * 0.4f;
+			float result = 1f + (baseRadius - 1f) * 0.3f;
 
 			return result * currentBody.lengthMultiplier;
 		}

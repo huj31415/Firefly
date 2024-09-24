@@ -27,6 +27,8 @@ namespace AtmosphericFx
 		public List<Renderer> fxEnvelope = new List<Renderer>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
 
+		public bool hasParticles = false;
+
 		public List<ParticleSystem> allParticles = new List<ParticleSystem>();
 		public List<FloatPair> orgParticleRates = new List<FloatPair>();
 		public ParticleSystem sparkParticles;
@@ -124,7 +126,7 @@ namespace AtmosphericFx
 			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
 
 			// create the particles
-			CreateParticleSystems();
+			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();
 
 			// calculate the vessel bounds
 			CalculateVesselBounds(fxVessel, vessel);
@@ -320,6 +322,8 @@ namespace AtmosphericFx
 		void CreateParticleSystems()
 		{
 			Logging.Log("Creating particle systems");
+
+			fxVessel.hasParticles = true;
 
 			for (int i = 0; i < vessel.transform.childCount; i++)
 			{
@@ -577,7 +581,7 @@ namespace AtmosphericFx
 			if ((!vessel.loaded) || (!isLoaded)) return;
 
 			// update particles
-			UpdateParticleSystems();
+			if (fxVessel.hasParticles) UpdateParticleSystems();
 
 			// position the cameras
 			fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();

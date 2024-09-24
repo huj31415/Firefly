@@ -132,17 +132,14 @@ namespace AtmosphericFx
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);
 
 			// set the current body
-			currentBody = ConfigManager.Instance.GetVesselBody(vessel);
-
-			// calculate the length multiplier
-			fxVessel.lengthMultiplier = GetLengthMultiplier();
-
-			// update the material properties
-			UpdateMaterialProperties();
+			UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel));
 
 			Logging.Log("Finished loading vessel");
 		}
 
+		/// <summary>
+		/// Resets the model renderer cache for each part
+		/// </summary>
 		void ResetPartModelCache()
 		{
 			for (int i = 0; i < vessel.parts.Count; i++)
@@ -220,25 +217,30 @@ namespace AtmosphericFx
 				yield break;
 			}
 
-			// TODO: Uncomment and make this a setting
-			/*
-			Collider[] colliders = part.GetPartColliders();
-			for (int j = 0; j < colliders.Length; j++)
+			if (ConfigManager.Instance.modSettings.useColliders)
 			{
-				MeshCollider collider = colliders[j] as MeshCollider;
-				if (collider == null)
+				Collider[] colliders = part.GetPartColliders();
+				for (int j = 0; j < colliders.Length; j++)
 				{
-					Logging.Log($"Collider {colliders[j].gameObject.name} isn't a mesh, ignoring");
-					continue;
+					MeshCollider collider = colliders[j] as MeshCollider;
+					if (collider == null)
+					{
+						Logging.Log($"Collider {colliders[j].gameObject.name} isn't a mesh, ignoring");
+						continue;
+					}
+
+					MeshRenderer renderer = InstantiateEnvelopeMesh(collider.transform, collider.sharedMesh, material, false);
+					fxVessel.fxEnvelope.Add(renderer);
+
+					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
+
+					yield return null;
 				}
 
-				MeshRenderer renderer = InstantiateEnvelopeMesh(collider.transform, collider.sharedMesh, material);
-				fxVessel.fxEnvelope.Add(renderer);
-
-				Logging.Log($"Initialized collider {colliders[j].gameObject.name}");
+				yield break;  // skip model search
 			}
-			*/
 
+			// This is only ran if the collider search hasn't ben ran
 			List<Renderer> models = part.FindModelRenderersCached();
 			for (int j = 0; j < models.Count; j++)
 			{
@@ -262,6 +264,8 @@ namespace AtmosphericFx
 				fxVessel.fxEnvelope.Add(renderer);
 
 				if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
+
+				yield return null;
 			}
 		}
 
@@ -589,7 +593,6 @@ namespace AtmosphericFx
 			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-			fxVessel.material.SetInt("_UnityEditor", 0);
 			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.isHdr ? 1 : 0);
 			fxVessel.material.SetFloat("_FxState", AeroFX.state);
 			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
@@ -628,13 +631,13 @@ namespace AtmosphericFx
 		{
 			currentBody = cfg;
 			fxVessel.lengthMultiplier = GetLengthMultiplier();
-			UpdateMaterialProperties();
+			UpdateStaticMaterialProperties();
 		}
 
 		/// <summary>
-		/// Updates the colors of the material
+		/// Updates the static material properties
 		/// </summary>
-		void UpdateMaterialProperties()
+		void UpdateStaticMaterialProperties()
 		{
 			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
 			fxVessel.material.SetFloat("_OpacityMultiplier", currentBody.opacityMultiplier);

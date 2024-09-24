@@ -5,6 +5,23 @@ using UnityEngine;
 
 namespace AtmosphericFx
 {
+	public struct ModSettings
+	{
+		public bool useColliders;
+		public bool disableParticles;
+
+		public ModSettings(bool useColliders, bool disableParticles)
+		{
+			this.useColliders = useColliders;
+			this.disableParticles = disableParticles;
+		}
+
+		public static ModSettings CreateDefault()
+		{
+			return new ModSettings(false, false);
+		}
+	}
+
 	public enum ModifierOperation
 	{
 		ADD = 0,
@@ -88,6 +105,9 @@ namespace AtmosphericFx
 	public class ConfigManager : MonoBehaviour
 	{
 		public static ConfigManager Instance { get; private set; }
+		public const string SettingsPath = "GameData/AtmosphericFx/PluginData/ModSettings.cfg";
+
+		public ModSettings modSettings = ModSettings.CreateDefault();
 
 		public Dictionary<string, BodyConfig> bodyConfigs = new Dictionary<string, BodyConfig>();
 		public List<PlanetPackConfig> planetPackConfigs = new List<PlanetPackConfig>();
@@ -114,6 +134,34 @@ namespace AtmosphericFx
 		/// Loads every planet pack and body config
 		/// </summary>
 		public void StartLoading()
+		{
+			LoadModSettings();
+			LoadPlanetConfigs();
+		}
+
+		void LoadModSettings()
+		{
+			// load settings
+			ConfigNode settingsNode = ConfigNode.Load(KSPUtil.ApplicationRootPath + SettingsPath);
+			modSettings = ModSettings.CreateDefault();
+
+			if (settingsNode == null)
+			{
+				// we don't have any saved settings or the user deleted the cfg file
+				return;
+			}
+
+			bool isFormatted = true;
+			modSettings.useColliders = ReadConfigBoolean(settingsNode, "use_colliders", ref isFormatted);
+			modSettings.disableParticles = ReadConfigBoolean(settingsNode, "disable_particles", ref isFormatted);
+
+			if (!isFormatted)
+			{
+				modSettings = ModSettings.CreateDefault();
+			}
+		}
+
+		void LoadPlanetConfigs()
 		{
 			// clear the dict and list
 			bodyConfigs.Clear();

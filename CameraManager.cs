@@ -16,6 +16,9 @@ namespace AtmosphericFx
 			OverrideHDR(ConfigManager.Instance.modSettings.hdrOverride);
 		}
 
+		/// <summary>
+		/// Sets the HDR option for the main and IVA cameras
+		/// </summary>
 		public void OverrideHDR(bool hdr)
 		{
 			isHdr = hdr;

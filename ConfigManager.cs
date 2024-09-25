@@ -140,7 +140,10 @@ namespace AtmosphericFx
 			LoadModSettings();
 			LoadPlanetConfigs();
 		}
-
+		
+		/// <summary>
+		/// Saves the mod setting overrides
+		/// </summary>
 		public void SaveModSettings()
 		{
 			// create a parent node
@@ -158,6 +161,9 @@ namespace AtmosphericFx
 			parent.Save(KSPUtil.ApplicationRootPath + SettingsPath);
 		}
 
+		/// <summary>
+		/// Loads the mod settings
+		/// </summary>
 		void LoadModSettings()
 		{
 			// load settings
@@ -187,6 +193,9 @@ namespace AtmosphericFx
 			Logging.Log($"UseColliders:{modSettings.useColliders} DisableParticles:{modSettings.disableParticles}");
 		}
 
+		/// <summary>
+		/// Loads the planetpack and body configs
+		/// </summary>
 		void LoadPlanetConfigs()
 		{
 			// clear the dict and list

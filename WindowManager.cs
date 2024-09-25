@@ -11,6 +11,7 @@ namespace AtmosphericFx
 
 		ApplicationLauncherButton appButton;
 		Rect windowPosition = new Rect(0, 0, 300, 100);
+		Rect infoWindowPosition = new Rect(0, 0, 300, 100);
 
 		bool uiHidden = false;
 		bool appToggle = false;
@@ -41,6 +42,9 @@ namespace AtmosphericFx
 			GameEvents.onShowUI.Add(OnShowUi);
 		}
 
+		/// <summary>
+		/// Initializes the default values of the toggles with the values loaded from the cfg file
+		/// </summary>
 		public void InitializeDefaultValues()
 		{
 			tgl_Hdr = ConfigManager.Instance.modSettings.hdrOverride;
@@ -54,13 +58,6 @@ namespace AtmosphericFx
 
 			GameEvents.onHideUI.Remove(OnHideUi);
 			GameEvents.onShowUI.Remove(OnShowUi);
-		}
-
-		public void OnGUI()
-		{
-			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
-
-			windowPosition = GUILayout.Window(10, windowPosition, OnWindow, "Atmospheric Effects Configuration");
 		}
 
 		void OnApplicationTrue()
@@ -83,7 +80,34 @@ namespace AtmosphericFx
 			uiHidden = false;
 		}
 
+		public void OnGUI()
+		{
+			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
+
+			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, "Atmospheric Effects Configuration");
+			infoWindowPosition = GUILayout.Window(410, infoWindowPosition, OnInfoWindow, "Atmospheric Effects Info");
+		}
+
 		void OnWindow(int id)
+		{
+			// init
+			Vessel vessel = FlightGlobals.ActiveVessel;
+			AtmoFxModule fxModule = EventManager.fxInstances[vessel.id];
+
+			// drawing
+			GUILayout.BeginVertical();
+
+			if (GUILayout.Button("Reload Vessel")) fxModule.ReloadVessel();
+			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
+			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
+			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
+			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
+
+			GUILayout.EndVertical();
+			GUI.DragWindow();
+		}
+
+		void OnInfoWindow(int id)
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
@@ -110,16 +134,16 @@ namespace AtmosphericFx
 			GUILayout.Label($"{fxModule.currentBody.bodyName}");
 			GUILayout.Space(20);
 
-			if (GUILayout.Button("Reload Vessel")) fxModule.ReloadVessel();
-			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
-			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
-			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
-			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
-
 			GUILayout.EndVertical();
 			GUI.DragWindow();
 		}
 
+		/// <summary>
+		/// Draws a config field with a toggle switch and a button which applies it
+		/// </summary>
+		/// <param name="label">Label to show</param>
+		/// <param name="tgl">The value of the toggle switch</param>
+		/// <returns>The apply button state</returns>
 		bool DrawConfigField(string label, ref bool tgl)
 		{
 			GUILayout.BeginHorizontal();

@@ -12,6 +12,8 @@ namespace AtmosphericFx
 		public void Awake()
 		{
 			Instance = this;
+			
+			OverrideHDR(ConfigManager.Instance.modSettings.hdrOverride);
 		}
 
 		public void OverrideHDR(bool hdr)

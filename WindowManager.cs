@@ -43,6 +43,7 @@ namespace AtmosphericFx
 
 		public void InitializeDefaultValues()
 		{
+			tgl_Hdr = ConfigManager.Instance.modSettings.hdrOverride;
 			tgl_UseColliders = ConfigManager.Instance.modSettings.useColliders;
 			tgl_DisableParticles = ConfigManager.Instance.modSettings.disableParticles;
 		}

@@ -27,7 +27,7 @@ namespace AtmosphericFx
 
 		public static bool EvaluateBool(string text, out bool val)
 		{
-			return bool.TryParse(text, out val);
+			return bool.TryParse(text.ToLower(), out val);
 		}
 
 		public static bool EvaluateColorHDR(string text, out Color val)

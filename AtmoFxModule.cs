@@ -186,13 +186,13 @@ namespace AtmosphericFx
 		/// </summary>
 		void CreatePartEnvelope(Part part, Material material)
 		{
-			StartCoroutine(CreatePartEnvelopeCoroutine(part, material));
+			CreatePartEnvelopeCoroutine(part, material);
 		}
 
 		/// <summary>
 		/// Coroutine for the CreatePartEnvelope function, spreads the generation over multiple frames
 		/// </summary>
-		IEnumerator CreatePartEnvelopeCoroutine(Part part, Material material)
+		void CreatePartEnvelopeCoroutine(Part part, Material material)
 		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length > 0)
@@ -211,12 +211,10 @@ namespace AtmosphericFx
 					fxVessel.fxEnvelope.Add(r);
 
 					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
-
-					yield return null;
 				}
 
 				// skip model search
-				yield break;
+				return;
 			}
 
 			if (ConfigManager.Instance.modSettings.useColliders)
@@ -235,39 +233,33 @@ namespace AtmosphericFx
 					fxVessel.fxEnvelope.Add(renderer);
 
 					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
-
-					yield return null;
 				}
-
-				yield break;  // skip model search
-			}
-
-			// This is only ran if the collider search hasn't ben ran
-			List<Renderer> models = part.FindModelRenderersCached();
-			for (int j = 0; j < models.Count; j++)
+			} else
 			{
-				Renderer model = models[j];
+				List<Renderer> models = part.FindModelRenderersCached();
+				for (int j = 0; j < models.Count; j++)
+				{
+					Renderer model = models[j];
 
-				// check for wheel flare
-				if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
+					// check for wheel flare
+					if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
 
-				// check for layers
-				if (CheckLayerModel(model.transform)) continue;
+					// check for layers
+					if (CheckLayerModel(model.transform)) continue;
 
-				// try getting the mesh filter
-				bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
-				if (!hasMeshFilter) continue;
+					// try getting the mesh filter
+					bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
+					if (!hasMeshFilter) continue;
 
-				// try getting the mesh
-				Mesh mesh = filter.sharedMesh;
-				if (mesh == null) continue;
+					// try getting the mesh
+					Mesh mesh = filter.sharedMesh;
+					if (mesh == null) continue;
 
-				MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
-				fxVessel.fxEnvelope.Add(renderer);
+					MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
+					fxVessel.fxEnvelope.Add(renderer);
 
-				if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
-
-				yield return null;
+					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
+				}
 			}
 		}
 
@@ -569,7 +561,6 @@ namespace AtmosphericFx
 
 			// debug mode
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
 		}
 

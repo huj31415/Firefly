@@ -139,17 +139,32 @@ namespace AtmosphericFx
 			LoadPlanetConfigs();
 		}
 
+		public void SaveModSettings()
+		{
+			// create the config node
+			ConfigNode node = new ConfigNode("ATMOFX_SETTINGS");
+
+			node.AddValue("use_colliders", modSettings.useColliders);
+			node.AddValue("disable_particles", modSettings.disableParticles);
+
+			// save
+			node.Save(KSPUtil.ApplicationRootPath + SettingsPath);
+		}
+
 		void LoadModSettings()
 		{
 			// load settings
-			ConfigNode settingsNode = ConfigNode.Load(KSPUtil.ApplicationRootPath + SettingsPath);
+			ConfigNode[] settingsNodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_SETTINGS");
 			modSettings = ModSettings.CreateDefault();
 
-			if (settingsNode == null)
+			if (settingsNodes.Length < 1)
 			{
 				// we don't have any saved settings or the user deleted the cfg file
+				Logging.Log("Using default mod settings");
 				return;
 			}
+
+			ConfigNode settingsNode = settingsNodes[0];
 
 			bool isFormatted = true;
 			modSettings.useColliders = ReadConfigBoolean(settingsNode, "use_colliders", ref isFormatted);
@@ -157,8 +172,11 @@ namespace AtmosphericFx
 
 			if (!isFormatted)
 			{
+				Logging.Log("Settings cfg formatted incorrectly");
 				modSettings = ModSettings.CreateDefault();
 			}
+
+			Logging.Log($"UseColliders:{modSettings.useColliders} DisableParticles:{modSettings.disableParticles}");
 		}
 
 		void LoadPlanetConfigs()

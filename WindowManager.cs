@@ -17,10 +17,14 @@ namespace AtmosphericFx
 
 		// Toggle values
 		public bool tgl_Hdr = false;
+		public bool tgl_UseColliders = false;
+		public bool tgl_DisableParticles = false;
 		
 		public void Awake()
 		{
 			Instance = this;
+
+			InitializeDefaultValues();
 		}
 
 		public void Start()
@@ -35,6 +39,12 @@ namespace AtmosphericFx
 
 			GameEvents.onHideUI.Add(OnHideUi);
 			GameEvents.onShowUI.Add(OnShowUi);
+		}
+
+		public void InitializeDefaultValues()
+		{
+			tgl_UseColliders = ConfigManager.Instance.modSettings.useColliders;
+			tgl_DisableParticles = ConfigManager.Instance.modSettings.disableParticles;
 		}
 
 		public void OnDestroy()
@@ -97,15 +107,26 @@ namespace AtmosphericFx
 
 			GUILayout.Label("Current config:");
 			GUILayout.Label($"{fxModule.currentBody.bodyName}");
-
 			GUILayout.Space(20);
-			GUILayout.BeginHorizontal();
-			tgl_Hdr = GUILayout.Toggle(tgl_Hdr, "HDR Override");
-			if (GUILayout.Button("Apply override")) CameraManager.Instance.OverrideHDR(tgl_Hdr);
-			GUILayout.EndHorizontal();
+
+			if (GUILayout.Button("Reload Vessel")) fxModule.ReloadVessel();
+			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
+			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
+			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
+			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
 
 			GUILayout.EndVertical();
 			GUI.DragWindow();
+		}
+
+		bool DrawConfigField(string label, ref bool tgl)
+		{
+			GUILayout.BeginHorizontal();
+				tgl = GUILayout.Toggle(tgl, label);
+				bool result = GUILayout.Button("Apply override");
+			GUILayout.EndHorizontal();
+
+			return result;
 		}
 	}
 }

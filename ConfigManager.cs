@@ -105,7 +105,7 @@ namespace AtmosphericFx
 	public class ConfigManager : MonoBehaviour
 	{
 		public static ConfigManager Instance { get; private set; }
-		public const string SettingsPath = "GameData/AtmosphericFx/PluginData/ModSettings.cfg";
+		public const string SettingsPath = "GameData/AtmosphericFx/Configs/ModSettings.cfg";
 
 		public ModSettings modSettings = ModSettings.CreateDefault();
 
@@ -141,14 +141,18 @@ namespace AtmosphericFx
 
 		public void SaveModSettings()
 		{
-			// create the config node
+			// create a parent node
+			ConfigNode parent = new ConfigNode("ATMOFX_SETTINGS");
+
+			// create the node
 			ConfigNode node = new ConfigNode("ATMOFX_SETTINGS");
 
 			node.AddValue("use_colliders", modSettings.useColliders);
 			node.AddValue("disable_particles", modSettings.disableParticles);
 
-			// save
-			node.Save(KSPUtil.ApplicationRootPath + SettingsPath);
+			// add to parent and save
+			parent.AddNode(node);
+			parent.Save(KSPUtil.ApplicationRootPath + SettingsPath);
 		}
 
 		void LoadModSettings()

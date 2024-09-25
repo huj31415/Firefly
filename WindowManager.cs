@@ -10,8 +10,8 @@ namespace AtmosphericFx
 		public static WindowManager Instance { get; private set; }
 
 		ApplicationLauncherButton appButton;
-		Rect windowPosition = new Rect(0, 0, 300, 100);
-		Rect infoWindowPosition = new Rect(0, 0, 300, 100);
+		Rect windowPosition = new Rect(0, 100, 300, 100);
+		Rect infoWindowPosition = new Rect(300, 100, 300, 100);
 
 		bool uiHidden = false;
 		bool appToggle = false;
@@ -130,8 +130,7 @@ namespace AtmosphericFx
 			GUILayout.Label($"AeroFX airspeed is {fxModule.AeroFX.airSpeed}");
 			GUILayout.Space(20);
 
-			GUILayout.Label("Current config:");
-			GUILayout.Label($"{fxModule.currentBody.bodyName}");
+			GUILayout.Label($"Current config is {fxModule.currentBody.bodyName}");
 			GUILayout.Space(20);
 
 			GUILayout.EndVertical();

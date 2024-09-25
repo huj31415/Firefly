@@ -7,18 +7,20 @@ namespace AtmosphericFx
 {
 	public struct ModSettings
 	{
+		public bool hdrOverride;
 		public bool useColliders;
 		public bool disableParticles;
 
-		public ModSettings(bool useColliders, bool disableParticles)
+		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles)
 		{
+			this.hdrOverride = hdrOverride;
 			this.useColliders = useColliders;
 			this.disableParticles = disableParticles;
 		}
 
 		public static ModSettings CreateDefault()
 		{
-			return new ModSettings(false, false);
+			return new ModSettings(true, false, false);
 		}
 	}
 
@@ -147,6 +149,7 @@ namespace AtmosphericFx
 			// create the node
 			ConfigNode node = new ConfigNode("ATMOFX_SETTINGS");
 
+			node.AddValue("hdr_override", modSettings.hdrOverride);
 			node.AddValue("use_colliders", modSettings.useColliders);
 			node.AddValue("disable_particles", modSettings.disableParticles);
 
@@ -171,6 +174,7 @@ namespace AtmosphericFx
 			ConfigNode settingsNode = settingsNodes[0];
 
 			bool isFormatted = true;
+			modSettings.hdrOverride = ReadConfigBoolean(settingsNode, "hdr_override", ref isFormatted);
 			modSettings.useColliders = ReadConfigBoolean(settingsNode, "use_colliders", ref isFormatted);
 			modSettings.disableParticles = ReadConfigBoolean(settingsNode, "disable_particles", ref isFormatted);
 

@@ -18,6 +18,8 @@ namespace AtmosphericFx
 		{
 			isHdr = hdr;
 
+			ConfigManager.Instance.modSettings.hdrOverride = hdr;
+
 			if (Camera.main != null)
 			{
 				Camera.main.allowHDR = hdr;

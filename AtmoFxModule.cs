@@ -495,8 +495,9 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
+			StopAllCoroutines();
 			OnVesselUnload();
-			StartCoroutine(LoadVesselCoroutine());
+			StartCoroutine(OnVesselLoaded());
 		}
 
 		/// <summary>

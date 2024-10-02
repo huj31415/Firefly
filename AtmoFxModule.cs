@@ -473,7 +473,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Unloads the vessel, removing instances and other things like that
 		/// </summary>
-		public void OnVesselUnload(bool onlyEnvelopes = false)
+		public void VesselUnload(bool onlyEnvelopes = false)
 		{
 			isLoaded = false;
 
@@ -505,7 +505,7 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
-			OnVesselUnload(false);
+			VesselUnload(false);
 			OnVesselLoaded();
 		}
 
@@ -514,7 +514,7 @@ namespace AtmosphericFx
 		/// </summary>
 		public void OnVesselModified()
 		{
-			OnVesselUnload(true);
+			VesselUnload(true);
 			OnVesselLoaded(true);
 		}
 
@@ -553,12 +553,12 @@ namespace AtmosphericFx
 
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
 
-			OnVesselUnload(false);
+			VesselUnload(false);
 		}
 
 		public void OnDestroy()
 		{
-			OnVesselUnload(false);
+			VesselUnload(false);
 		}
 
 		void Debug_ToggleEnvelopes()

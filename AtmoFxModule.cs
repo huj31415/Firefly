@@ -99,13 +99,14 @@ namespace AtmosphericFx
 				return;
 			}
 
-			fxVessel = new AtmoFxVessel();
 			Logging.Log("Loading vessel " + vessel.name);
 			Logging.Log(onModify ? "Using light method" : "Using heavy method");
 
 			Material material = fxVessel.material;
 			if (!onModify)
 			{
+				fxVessel = new AtmoFxVessel();
+
 				// create material
 				material = Instantiate(AssetLoader.Instance.globalMaterial);
 				fxVessel.material = material;

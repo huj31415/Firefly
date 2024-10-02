@@ -85,19 +85,20 @@ namespace AtmosphericFx
 			}
 		}
 
+		float aliveTime = 0f;
+
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		void OnVesselLoaded()
+		IEnumerator OnVesselLoaded()
 		{
 			// check if the vessel is actually loaded, and if it has any parts
 			if ((!vessel.loaded) || vessel.parts.Count < 1)
 			{
 				EventManager.UnregisterInstance(vessel.id);
-				return;
+				yield break;
 			}
 
-			isLoaded = true;
 			fxVessel = new AtmoFxVessel();
 			Logging.Log("Loading vessel " + vessel.name);
 
@@ -111,7 +112,7 @@ namespace AtmosphericFx
 
 			fxVessel.airstreamCamera.orthographic = true;
 			fxVessel.airstreamCamera.clearFlags = CameraClearFlags.SolidColor;
-			fxVessel.airstreamCamera.cullingMask = (1 << 0);
+			fxVessel.airstreamCamera.cullingMask = (1 << 0);  // Only render layer 0, which is for the spacecraft
 
 			// create rendertexture
 			fxVessel.airstreamTexture = new RenderTexture(512, 512, 1, RenderTextureFormat.Depth);
@@ -122,21 +123,22 @@ namespace AtmosphericFx
 			ResetPartModelCache();
 
 			// create the fx envelopes
-			UpdateFxEnvelopes(material);
-			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+			yield return UpdateFxEnvelopes(material);
+			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
 
 			// create the particles
-			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();
+			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			// calculate the vessel bounds
 			CalculateVesselBounds(fxVessel, vessel);
-			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);
-			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);
+			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
+			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
 
 			// set the current body
 			UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel));
 
 			Logging.Log("Finished loading vessel");
+			isLoaded = true;
 		}
 
 		/// <summary>
@@ -186,14 +188,6 @@ namespace AtmosphericFx
 		/// </summary>
 		void CreatePartEnvelope(Part part, Material material)
 		{
-			CreatePartEnvelopeCoroutine(part, material);
-		}
-
-		/// <summary>
-		/// Coroutine for the CreatePartEnvelope function, spreads the generation over multiple frames
-		/// </summary>
-		void CreatePartEnvelopeCoroutine(Part part, Material material)
-		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length > 0)
 			{
@@ -234,7 +228,8 @@ namespace AtmosphericFx
 
 					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
 				}
-			} else
+			}
+			else
 			{
 				List<Renderer> models = part.FindModelRenderersCached();
 				for (int j = 0; j < models.Count; j++)
@@ -266,7 +261,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Creates the effect envelopes
 		/// </summary>
-		void UpdateFxEnvelopes(Material material)
+		IEnumerator UpdateFxEnvelopes(Material material)
 		{
 			Logging.Log($"Updating fx envelopes for vessel {vessel.name}");
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
@@ -280,6 +275,8 @@ namespace AtmosphericFx
 				if (!IsPartCompatible(part)) continue;
 
 				CreatePartEnvelope(part, material);
+
+				yield return null;
 			}
 
 			// set the vessel position to zero, to make combining possible
@@ -499,7 +496,7 @@ namespace AtmosphericFx
 		public void ReloadVessel()
 		{
 			OnVesselUnload();
-			OnVesselLoaded();
+			StartCoroutine(LoadVesselCoroutine());
 		}
 
 		/// <summary>
@@ -512,7 +509,7 @@ namespace AtmosphericFx
 				yield return null;
 			}
 
-			OnVesselLoaded();
+			yield return OnVesselLoaded();
 		}
 
 		public void Awake()

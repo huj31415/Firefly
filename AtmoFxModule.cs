@@ -505,7 +505,7 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
-			OnVesselUnload();
+			OnVesselUnload(false);
 			OnVesselLoaded();
 		}
 
@@ -553,12 +553,12 @@ namespace AtmosphericFx
 
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
 
-			OnVesselUnload();
+			OnVesselUnload(false);
 		}
 
 		public void OnDestroy()
 		{
-			OnVesselUnload();
+			OnVesselUnload(false);
 		}
 
 		void Debug_ToggleEnvelopes()

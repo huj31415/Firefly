@@ -90,13 +90,13 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		IEnumerator OnVesselLoaded()
+		void OnVesselLoaded()
 		{
 			// check if the vessel is actually loaded, and if it has any parts
 			if ((!vessel.loaded) || vessel.parts.Count < 1)
 			{
 				EventManager.UnregisterInstance(vessel.id);
-				yield break;
+				return;
 			}
 
 			fxVessel = new AtmoFxVessel();
@@ -123,7 +123,7 @@ namespace AtmosphericFx
 			ResetPartModelCache();
 
 			// create the fx envelopes
-			yield return UpdateFxEnvelopes(material);
+			UpdateFxEnvelopes(material);
 			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
 
 			// create the particles
@@ -261,7 +261,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Creates the effect envelopes
 		/// </summary>
-		IEnumerator UpdateFxEnvelopes(Material material)
+		void UpdateFxEnvelopes(Material material)
 		{
 			Logging.Log($"Updating fx envelopes for vessel {vessel.name}");
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
@@ -275,8 +275,6 @@ namespace AtmosphericFx
 				if (!IsPartCompatible(part)) continue;
 
 				CreatePartEnvelope(part, material);
-
-				yield return null;
 			}
 
 			// set the vessel position to zero, to make combining possible
@@ -495,9 +493,8 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
-			StopAllCoroutines();
 			OnVesselUnload();
-			StartCoroutine(OnVesselLoaded());
+			OnVesselLoaded();
 		}
 
 		/// <summary>
@@ -510,7 +507,7 @@ namespace AtmosphericFx
 				yield return null;
 			}
 
-			yield return OnVesselLoaded();
+			OnVesselLoaded();
 		}
 
 		public void Awake()

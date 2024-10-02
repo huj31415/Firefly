@@ -90,7 +90,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		void OnVesselLoaded()
+		void OnVesselLoaded(bool onModify = false)
 		{
 			// check if the vessel is actually loaded, and if it has any parts
 			if ((!vessel.loaded) || vessel.parts.Count < 1)
@@ -101,23 +101,28 @@ namespace AtmosphericFx
 
 			fxVessel = new AtmoFxVessel();
 			Logging.Log("Loading vessel " + vessel.name);
+			Logging.Log(onModify ? "Using light method" : "Using heavy method");
 
-			// create material
-			Material material = Instantiate(AssetLoader.Instance.globalMaterial);
-			fxVessel.material = material;
+			Material material = fxVessel.material;
+			if (!onModify)
+			{
+				// create material
+				material = Instantiate(AssetLoader.Instance.globalMaterial);
+				fxVessel.material = material;
 
-			// create camera
-			GameObject cameraGO = new GameObject("AtmoFxCamera - " + vessel.name);
-			fxVessel.airstreamCamera = cameraGO.AddComponent<Camera>();
+				// create camera
+				GameObject cameraGO = new GameObject("AtmoFxCamera - " + vessel.name);
+				fxVessel.airstreamCamera = cameraGO.AddComponent<Camera>();
 
-			fxVessel.airstreamCamera.orthographic = true;
-			fxVessel.airstreamCamera.clearFlags = CameraClearFlags.SolidColor;
-			fxVessel.airstreamCamera.cullingMask = (1 << 0);  // Only render layer 0, which is for the spacecraft
+				fxVessel.airstreamCamera.orthographic = true;
+				fxVessel.airstreamCamera.clearFlags = CameraClearFlags.SolidColor;
+				fxVessel.airstreamCamera.cullingMask = (1 << 0);  // Only render layer 0, which is for the spacecraft
 
-			// create rendertexture
-			fxVessel.airstreamTexture = new RenderTexture(512, 512, 1, RenderTextureFormat.Depth);
-			fxVessel.airstreamTexture.Create();
-			fxVessel.airstreamCamera.targetTexture = fxVessel.airstreamTexture;
+				// create rendertexture
+				fxVessel.airstreamTexture = new RenderTexture(512, 512, 1, RenderTextureFormat.Depth);
+				fxVessel.airstreamTexture.Create();
+				fxVessel.airstreamCamera.targetTexture = fxVessel.airstreamTexture;
+			}
 
 			// reset part cache
 			ResetPartModelCache();
@@ -134,8 +139,11 @@ namespace AtmosphericFx
 			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
 
-			// set the current body
-			UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel));
+			if (!onModify)
+			{
+				// set the current body
+				UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel));
+			}
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
@@ -464,7 +472,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Unloads the vessel, removing instances and other things like that
 		/// </summary>
-		public void OnVesselUnload()
+		public void OnVesselUnload(bool onlyEnvelopes = false)
 		{
 			isLoaded = false;
 
@@ -474,16 +482,19 @@ namespace AtmosphericFx
 				if (fxVessel.fxEnvelope[i] != null) Destroy(fxVessel.fxEnvelope[i].gameObject);
 			}
 
-			// destroy the misc stuff
-			if (fxVessel.material != null) Destroy(fxVessel.material);
-			if (fxVessel.airstreamCamera != null) Destroy(fxVessel.airstreamCamera.gameObject);
-			if (fxVessel.airstreamTexture != null) Destroy(fxVessel.airstreamTexture);
+			if (!onlyEnvelopes)
+			{
+				// destroy the misc stuff
+				if (fxVessel.material != null) Destroy(fxVessel.material);
+				if (fxVessel.airstreamCamera != null) Destroy(fxVessel.airstreamCamera.gameObject);
+				if (fxVessel.airstreamTexture != null) Destroy(fxVessel.airstreamTexture);
 
-			// destroy the particles
-			if (fxVessel.sparkParticles != null) Destroy(fxVessel.sparkParticles.gameObject);
-			if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
-			if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
-			if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
+				// destroy the particles
+				if (fxVessel.sparkParticles != null) Destroy(fxVessel.sparkParticles.gameObject);
+				if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
+				if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
+				if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
+			}
 
 			Logging.Log("Unloaded vessel " + vessel.vesselName);
 		}
@@ -495,6 +506,15 @@ namespace AtmosphericFx
 		{
 			OnVesselUnload();
 			OnVesselLoaded();
+		}
+
+		/// <summary>
+		/// Similar to ReloadVessel(), but it's much lighter since it does not re-instantiate the camera and particles
+		/// </summary>
+		public void OnVesselModified()
+		{
+			OnVesselUnload(true);
+			OnVesselLoaded(true);
 		}
 
 		/// <summary>

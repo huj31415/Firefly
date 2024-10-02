@@ -89,7 +89,7 @@ namespace AtmosphericFx
 			Logging.Log("Modified vessel");
 			Logging.Log(vessel.name);
 
-			if (fxInstances.ContainsKey(vessel.id)) fxInstances[vessel.id].ReloadVessel();
+			if (fxInstances.ContainsKey(vessel.id)) fxInstances[vessel.id].OnVesselModified();
 		}
 
 		/// <summary>

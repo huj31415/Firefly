@@ -87,7 +87,7 @@ namespace AtmosphericFx
 
 		public void Update()
 		{
-			reloadBtnTime = Time.realtimeSinceStartup;
+			
 		}
 
 		public void OnGUI()
@@ -111,7 +111,11 @@ namespace AtmosphericFx
 			GUILayout.BeginVertical();
 
 			bool canReload = (Time.realtimeSinceStartup - reloadBtnTime) > 1f;
-			if (GUILayout.Button("Reload Vessel") && canReload) fxModule.ReloadVessel();
+			if (GUILayout.Button("Reload Vessel") && canReload)
+			{
+				fxModule.ReloadVessel();
+				reloadBtnTime = Time.realtimeSinceStartup;
+			}
 			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
 			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
 			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;

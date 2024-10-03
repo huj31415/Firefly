@@ -73,9 +73,7 @@ namespace AtmosphericFx
 		/// </summary>
 		void DockingEventFunction(GameEvents.FromToAction<Part, Part> action)
 		{
-			Logging.Log("Docked vessels");
-			Logging.Log(action.from.vessel.name);
-			Logging.Log(action.to.vessel.name);
+			Logging.Log($"Docked vessels {action.from.vessel.name}, {action.to.vessel.name}");
 
 			if (fxInstances.ContainsKey(action.from.vessel.id)) fxInstances[action.from.vessel.id].ReloadVessel();
 			if (fxInstances.ContainsKey(action.to.vessel.id)) fxInstances[action.to.vessel.id].ReloadVessel();
@@ -86,10 +84,10 @@ namespace AtmosphericFx
 		/// </summary>
 		void ModifiedEventFunction(Vessel vessel)
 		{
-			Logging.Log("Modified vessel");
-			Logging.Log(vessel.name);
+			Logging.Log($"Modified vessel {vessel.name}");
 
 			if (fxInstances.ContainsKey(vessel.id)) fxInstances[vessel.id].OnVesselModified();
+			else Logging.Log("FX instance not registered");
 		}
 
 		/// <summary>

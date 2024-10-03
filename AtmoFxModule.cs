@@ -93,9 +93,12 @@ namespace AtmosphericFx
 		void OnVesselLoaded(bool onModify = false)
 		{
 			// check if the vessel is actually loaded, and if it has any parts
-			if ((!vessel.loaded) || vessel.parts.Count < 1)
+			if (vessel == null || (!vessel.loaded) || vessel.parts.Count < 1)
 			{
 				EventManager.UnregisterInstance(vessel.id);
+				Logging.Log("Invalid vessel");
+				Logging.Log($"loaded: {vessel.loaded}");
+				Logging.Log($"partcount: {vessel.parts.Count}");
 				return;
 			}
 
@@ -123,6 +126,16 @@ namespace AtmosphericFx
 				fxVessel.airstreamTexture = new RenderTexture(512, 512, 1, RenderTextureFormat.Depth);
 				fxVessel.airstreamTexture.Create();
 				fxVessel.airstreamCamera.targetTexture = fxVessel.airstreamTexture;
+			}
+
+			// Check if the fxVessel or material is null
+			if (fxVessel == null || material == null)
+			{
+				Logging.Log("fxVessel/material is null");
+
+				VesselUnload(false);
+				EventManager.UnregisterInstance(vessel.id);
+				return;
 			}
 
 			// reset part cache
@@ -475,6 +488,8 @@ namespace AtmosphericFx
 		/// </summary>
 		public void VesselUnload(bool onlyEnvelopes = false)
 		{
+			if (!isLoaded) return;
+
 			isLoaded = false;
 
 			// destroy the fx envelope
@@ -519,21 +534,18 @@ namespace AtmosphericFx
 		}
 
 		/// <summary>
-		/// Coroutine which starts the OnVesselLoaded() method after 10 frames
+		/// Coroutine which starts the OnVesselLoaded() method after some time
 		/// </summary>
 		IEnumerator LoadVesselCoroutine()
 		{
+			yield return new WaitForSecondsRealtime(2f);
+
 			for (int i = 0; i < 10; i++)
 			{
 				yield return null;
 			}
 
 			OnVesselLoaded();
-		}
-
-		public void Awake()
-		{
-			base.Awake();
 		}
 
 		public override void OnLoadVessel()
@@ -552,6 +564,8 @@ namespace AtmosphericFx
 			base.OnUnloadVessel();
 
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
+
+			StopAllCoroutines();
 
 			VesselUnload(false);
 		}

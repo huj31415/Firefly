@@ -138,6 +138,7 @@ namespace AtmosphericFx
 			// drawing
 			GUILayout.BeginVertical();
 
+			GUILayout.Label($"Mod version: beta-{Versioning.Version}. This is a testing-only build.");
 			GUILayout.Label($"All assets loaded? {AssetLoader.Instance.allAssetsLoaded}");
 			GUILayout.Space(20);
 

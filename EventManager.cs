@@ -43,6 +43,9 @@ namespace AtmosphericFx
 			GameEvents.onDockingComplete.Remove(DockingEvent);
 			GameEvents.onVesselPartCountChanged.Remove(ModifiedEventFunction);
 			GameEvents.onVesselSOIChanged.Remove(SoiChangeFunction);
+
+			// clear dict
+			EventManager.fxInstances.Clear();
 		}
 
 		/// <summary>

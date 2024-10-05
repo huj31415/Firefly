@@ -78,8 +78,8 @@ namespace AtmosphericFx
 		{
 			Logging.Log($"Docked vessels {action.from.vessel.name}, {action.to.vessel.name}");
 
-			if (fxInstances.ContainsKey(action.from.vessel.id)) fxInstances[action.from.vessel.id].ReloadVessel();
-			if (fxInstances.ContainsKey(action.to.vessel.id)) fxInstances[action.to.vessel.id].ReloadVessel();
+			if (fxInstances.TryGetValue(action.from.vessel.id, out AtmoFxModule module)) module.ReloadVessel();
+			if (fxInstances.TryGetValue(action.to.vessel.id, out module)) module.ReloadVessel();
 		}
 
 		/// <summary>
@@ -89,7 +89,7 @@ namespace AtmosphericFx
 		{
 			Logging.Log($"Modified vessel {vessel.name}");
 
-			if (fxInstances.ContainsKey(vessel.id)) fxInstances[vessel.id].OnVesselModified();
+			if (fxInstances.TryGetValue(vessel.id, out AtmoFxModule module)) module.OnVesselModified();
 			else Logging.Log("FX instance not registered");
 		}
 
@@ -98,9 +98,9 @@ namespace AtmosphericFx
 		/// </summary>
 		void SoiChangeFunction(GameEvents.HostedFromToAction<Vessel, CelestialBody> action)
 		{
-			if (fxInstances.ContainsKey(action.host.id))
+			if (fxInstances.TryGetValue(action.host.id, out AtmoFxModule module))
 			{
-				fxInstances[action.host.id].UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(action.host));
+				module.UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(action.host));
 			}
 		}
 	}

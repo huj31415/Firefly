@@ -619,7 +619,7 @@ namespace AtmosphericFx
 			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
 			fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.isHdr ? 1 : 0);
+			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
 			fxVessel.material.SetFloat("_FxState", AeroFX.state);
 			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
 			fxVessel.material.SetFloat("_ShadowPower", 0f);
@@ -785,6 +785,8 @@ namespace AtmosphericFx
 		/// </summary>
 		float GetEntrySpeed()
 		{
+			// TODO: uncomment
+			/*
 			// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
 			double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
 			double vesselMach = vessel.mach;
@@ -817,11 +819,16 @@ namespace AtmosphericFx
 						break;
 				}
 			}
+			
 
 			// convert to m/s
 			float spd = (float)(mach * vesselMach);
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
 			spd *= aeroFxScalar;
+			*/
+
+			float spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.2f, 1f, AeroFX.state);
+
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime);
 
 			lastSpeed = spd;
@@ -870,7 +877,10 @@ namespace AtmosphericFx
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
-			return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
+			// TODO: Uncomment
+			// return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
+
+			return GetEntrySpeed();
 		}
 
 		/// <summary>

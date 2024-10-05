@@ -9,6 +9,13 @@ namespace AtmosphericFx
 
 		public bool isHdr = false;
 
+		public bool ActualHdrState { get 
+			{
+				if (Camera.main != null) return Camera.main.allowHDR;
+				else return isHdr;
+			} 
+		}
+
 		public void Awake()
 		{
 			Instance = this;

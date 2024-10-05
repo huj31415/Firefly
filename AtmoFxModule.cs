@@ -924,8 +924,8 @@ namespace AtmosphericFx
 		/// </summary>
 		bool CheckWheelFlareModel(Part part, string model)
 		{
-			bool isFlare = model.ToLower().Equals("flare");
-			bool isWheel = part.Modules.Contains("ModuleWheelBase");
+			bool isFlare = string.Equals(model, "flare", System.StringComparison.OrdinalIgnoreCase);
+			bool isWheel = part.HasModuleImplementing<ModuleWheelBase>();
 
 			return isFlare && isWheel;
 		}

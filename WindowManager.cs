@@ -21,6 +21,8 @@ namespace AtmosphericFx
 		public bool tgl_UseColliders = false;
 		public bool tgl_DisableParticles = false;
 
+		public bool tgl_SpeedMethod = true;
+
 		// timer
 		float reloadBtnTime = 0f;
 		
@@ -119,6 +121,7 @@ namespace AtmosphericFx
 			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
 			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
 			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
+			DrawConfigField("Speed method", ref tgl_SpeedMethod);
 			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
 
 			// end

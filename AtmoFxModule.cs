@@ -827,7 +827,7 @@ namespace AtmosphericFx
 			spd *= aeroFxScalar;
 			*/
 
-			float spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.2f, 1f, AeroFX.state);
+			float spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime);
 

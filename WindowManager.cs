@@ -105,7 +105,7 @@ namespace AtmosphericFx
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
-			AtmoFxModule fxModule = EventManager.fxInstances[vessel.id];
+			if (!EventManager.fxInstances.TryGetValue(vessel.id, out AtmoFxModule fxModule)) return;
 
 			// drawing
 			GUILayout.BeginVertical();
@@ -133,7 +133,7 @@ namespace AtmosphericFx
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
-			AtmoFxModule fxModule = EventManager.fxInstances[vessel.id];
+			if (!EventManager.fxInstances.TryGetValue(vessel.id, out AtmoFxModule fxModule)) return;
 
 			// drawing
 			GUILayout.BeginVertical();

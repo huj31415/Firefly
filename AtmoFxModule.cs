@@ -89,6 +89,11 @@ namespace AtmosphericFx
 
 		float aliveTime = 0f;
 
+		public override Activation GetActivation()
+		{
+			return Activation.LoadedVessels;
+		}
+
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
@@ -597,7 +602,7 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
 			// Certain things only need to happen if we had a fixed update
-			if (Time.fixedTime != lastFixedTime)
+			if (Time.fixedTime != lastFixedTime && isLoaded)
 			{
 				lastFixedTime = Time.fixedTime;
 

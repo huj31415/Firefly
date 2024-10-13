@@ -91,7 +91,7 @@ namespace AtmosphericFx
 
 		public override Activation GetActivation()
 		{
-			return Activation.LoadedVessels;
+			return Activation.LoadedVessels | Activation.FlightScene;
 		}
 
 		/// <summary>

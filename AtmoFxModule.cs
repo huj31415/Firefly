@@ -88,6 +88,7 @@ namespace AtmosphericFx
 		}
 
 		float aliveTime = 0f;
+		private bool markForReload;
 
 		public override Activation GetActivation()
 		{
@@ -537,7 +538,7 @@ namespace AtmosphericFx
 		public void OnVesselModified()
 		{
 			VesselUnload(true);
-			OnVesselLoaded(true);
+			markForReload = true;
 		}
 
 		/// <summary>
@@ -600,6 +601,12 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
+
+			if (markForReload)
+			{
+				markForReload = false;
+				OnVesselLoaded(true);
+			}
 
 			// Certain things only need to happen if we had a fixed update
 			if (Time.fixedTime != lastFixedTime && isLoaded)

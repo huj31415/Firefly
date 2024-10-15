@@ -72,6 +72,7 @@ namespace AtmosphericFx
 
 		public BodyConfig currentBody;
 
+		// Snippet taken from Reentry Particle Effects by pizzaoverhead
 		AerodynamicsFX _aeroFX;
 		public AerodynamicsFX AeroFX
 		{
@@ -87,7 +88,6 @@ namespace AtmosphericFx
 			}
 		}
 
-		float aliveTime = 0f;
 		private bool markForReload;
 
 		public override Activation GetActivation()

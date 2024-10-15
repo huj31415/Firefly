@@ -537,6 +537,7 @@ namespace AtmosphericFx
 		/// </summary>
 		public void OnVesselModified()
 		{
+			// Mark the vessel for reloading
 			VesselUnload(true);
 			markForReload = true;
 		}
@@ -602,6 +603,7 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
+			// Reload if the vessel is marked for reloading
 			if (markForReload)
 			{
 				markForReload = false;

@@ -100,7 +100,7 @@ namespace AtmosphericFx
 		{
 			if (fxInstances.TryGetValue(action.host.id, out AtmoFxModule module))
 			{
-				module.UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(action.host));
+				module.UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(action.host), action.to);
 			}
 		}
 	}

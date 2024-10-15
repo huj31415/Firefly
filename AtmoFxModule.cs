@@ -1,3 +1,4 @@
+using Expansions.Missions.Editor;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -66,7 +67,7 @@ namespace AtmosphericFx
 		bool debugMode = false;
 
 		float lastFixedTime;
-
+		bool bodyHasAtmo;
 		float desiredRate;
 		float lastSpeed;
 
@@ -101,12 +102,21 @@ namespace AtmosphericFx
 		void OnVesselLoaded(bool onModify = false)
 		{
 			// check if the vessel is actually loaded, and if it has any parts
-			if (vessel == null || (!vessel.loaded) || vessel.parts.Count < 1)
+			if (vessel == null || (!vessel.loaded) || vessel.parts.Count < 1 )
 			{
 				EventManager.UnregisterInstance(vessel.id);
 				Logging.Log("Invalid vessel");
 				Logging.Log($"loaded: {vessel.loaded}");
 				Logging.Log($"partcount: {vessel.parts.Count}");
+				Logging.Log($"atmo: {vessel.mainBody.atmosphere}");
+				return;
+			}
+
+			// check for atmosphere
+			if (!vessel.mainBody.atmosphere)
+			{
+				Logging.Log("MainBody does not have an atmosphere");
+				bodyHasAtmo = false;
 				return;
 			}
 
@@ -164,7 +174,7 @@ namespace AtmosphericFx
 			if (!onModify)
 			{
 				// set the current body
-				UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel));
+				UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel), vessel.mainBody);
 			}
 
 			Logging.Log("Finished loading vessel");
@@ -528,6 +538,8 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
+			if (!bodyHasAtmo) return;
+
 			VesselUnload(false);
 			OnVesselLoaded();
 		}
@@ -537,6 +549,8 @@ namespace AtmosphericFx
 		/// </summary>
 		public void OnVesselModified()
 		{
+			if (!bodyHasAtmo) return;
+
 			// Mark the vessel for reloading
 			VesselUnload(true);
 			markForReload = true;
@@ -667,8 +681,21 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Updates the current body, and updates the properties
 		/// </summary>
-		public void UpdateCurrentBody(BodyConfig cfg)
+		public void UpdateCurrentBody(BodyConfig cfg, CelestialBody body)
 		{
+			if (!body.atmosphere)
+			{
+				bodyHasAtmo = false;
+				if (isLoaded) VesselUnload(false);
+				return;
+			}
+
+			if (!bodyHasAtmo)
+			{
+				OnLoadVessel();
+			}
+
+			bodyHasAtmo = true;
 			currentBody = cfg;
 			fxVessel.lengthMultiplier = GetLengthMultiplier();
 			UpdateStaticMaterialProperties();

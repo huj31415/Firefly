@@ -692,10 +692,10 @@ namespace AtmosphericFx
 
 			if (!bodyHasAtmo)
 			{
+				bodyHasAtmo = true;
 				OnLoadVessel();
 			}
 
-			bodyHasAtmo = true;
 			currentBody = cfg;
 			fxVessel.lengthMultiplier = GetLengthMultiplier();
 			UpdateStaticMaterialProperties();

@@ -65,6 +65,8 @@ namespace AtmosphericFx
 
 		bool debugMode = false;
 
+		float lastFixedTime;
+
 		float desiredRate;
 		float lastSpeed;
 
@@ -86,6 +88,12 @@ namespace AtmosphericFx
 		}
 
 		float aliveTime = 0f;
+		private bool markForReload;
+
+		public override Activation GetActivation()
+		{
+			return Activation.LoadedVessels | Activation.FlightScene;
+		}
 
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
@@ -530,7 +538,7 @@ namespace AtmosphericFx
 		public void OnVesselModified()
 		{
 			VesselUnload(true);
-			OnVesselLoaded(true);
+			markForReload = true;
 		}
 
 		/// <summary>
@@ -593,38 +601,42 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
-		}
 
-		public void FixedUpdate()
-		{
-			if (!AssetLoader.Instance.allAssetsLoaded) return;
+			if (markForReload)
+			{
+				markForReload = false;
+				OnVesselLoaded(true);
+			}
 
-			// return if the vessel isnt loaded
-			if ((!vessel.loaded) || (!isLoaded)) return;
+			// Certain things only need to happen if we had a fixed update
+			if (Time.fixedTime != lastFixedTime && isLoaded)
+			{
+				lastFixedTime = Time.fixedTime;
 
-			// update particles
-			if (fxVessel.hasParticles) UpdateParticleSystems();
+				// update particles
+				if (fxVessel.hasParticles) UpdateParticleSystems();
 
-			// position the cameras
-			fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();
-			fxVessel.airstreamCamera.transform.LookAt(vessel.transform.TransformPoint(fxVessel.vesselBoundCenter));
+				// position the cameras
+				fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();
+				fxVessel.airstreamCamera.transform.LookAt(vessel.transform.TransformPoint(fxVessel.vesselBoundCenter));
 
-			// view projection matrix for the airstream camera
-			Matrix4x4 V = fxVessel.airstreamCamera.worldToCameraMatrix;
-			Matrix4x4 P = GL.GetGPUProjectionMatrix(fxVessel.airstreamCamera.projectionMatrix, true);
-			Matrix4x4 VP = P * V;
+				// view projection matrix for the airstream camera
+				Matrix4x4 V = fxVessel.airstreamCamera.worldToCameraMatrix;
+				Matrix4x4 P = GL.GetGPUProjectionMatrix(fxVessel.airstreamCamera.projectionMatrix, true);
+				Matrix4x4 VP = P * V;
 
-			// update the material with dynamic properties
-			fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
-			fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
-			fxVessel.material.SetMatrix("_AirstreamVP", VP);
+				// update the material with dynamic properties
+				fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
+				fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
+				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
-			fxVessel.material.SetFloat("_FxState", AeroFX.state);
-			fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
-			fxVessel.material.SetFloat("_ShadowPower", 0f);
-			fxVessel.material.SetFloat("_VelDotPower", 0f);
-			fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+				fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
+				fxVessel.material.SetFloat("_FxState", AeroFX.state);
+				fxVessel.material.SetFloat("_AngleOfAttack", GetAngleOfAttack());
+				fxVessel.material.SetFloat("_ShadowPower", 0f);
+				fxVessel.material.SetFloat("_VelDotPower", 0f);
+				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+			}
 		}
 
 		public void OnGUI()

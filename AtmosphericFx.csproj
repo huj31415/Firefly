@@ -23,7 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -248,7 +248,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y "$(TargetPath)" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"
-xcopy /y "$(TargetDir)\AtmosphericFx.pdb" "D:\Programy\KerbalSpaceProgram\Modding\GameData\AtmosphericFx\Plugins"</PostBuildEvent>
+    <PostBuildEvent>xcopy /y "$(TargetDir)\AtmosphericFX.*" "$(ReferencePath)..\..\GameData\AtmosphericFx\Plugins\*"
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -62,12 +62,12 @@ namespace AtmosphericFx
 	public class AtmoFxModule : VesselModule
 	{
 		public AtmoFxVessel fxVessel = new AtmoFxVessel();
-		bool isLoaded = false;
+		public bool isLoaded = false;
 
 		bool debugMode = false;
 
 		float lastFixedTime;
-		bool bodyHasAtmo;
+		public bool bodyHasAtmo;
 		float desiredRate;
 		float lastSpeed;
 

@@ -89,7 +89,7 @@ namespace AtmosphericFx
 			}
 		}
 
-		private bool markForReload;
+		int reloadDelayFrames= 0;
 
 		public override Activation GetActivation()
 		{
@@ -278,6 +278,8 @@ namespace AtmosphericFx
 				for (int j = 0; j < models.Count; j++)
 				{
 					Renderer model = models[j];
+
+					if (model.name == "atmofx_envelope_generated") continue;
 
 					// check for wheel flare
 					if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
@@ -514,10 +516,19 @@ namespace AtmosphericFx
 			isLoaded = false;
 
 			// destroy the fx envelope
-			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
+			foreach (var renderer in fxVessel.fxEnvelope)
 			{
-				if (fxVessel.fxEnvelope[i] != null) Destroy(fxVessel.fxEnvelope[i].gameObject);
+				if (renderer != null)
+				{
+					renderer.transform.SetParent(null);
+					Destroy(renderer);
+				}
 			}
+
+			Destroy(fxVessel.totalEnvelope);
+
+			fxVessel.fxEnvelope.Clear();
+			fxVessel.particleFxEnvelope.Clear();
 
 			if (!onlyEnvelopes)
 			{
@@ -544,7 +555,7 @@ namespace AtmosphericFx
 		public void ReloadVessel()
 		{
 			RemoveVesselFx(false);
-			CreateVesselFx();
+			reloadDelayFrames = Math.Max(reloadDelayFrames, 2);
 		}
 
 		/// <summary>
@@ -554,25 +565,19 @@ namespace AtmosphericFx
 		{
 			// Mark the vessel for reloading
 			RemoveVesselFx(true);
-			markForReload = true;
+			reloadDelayFrames = Math.Max(reloadDelayFrames, 2);
 		}
 
 		public override void OnLoadVessel()
 		{
 			base.OnLoadVessel();
 
-			if (!AssetLoader.Instance.allAssetsLoaded) return;
-
-			markForReload = true;
+			reloadDelayFrames = 20;
 		}
 
 		public override void OnUnloadVessel()
 		{
 			base.OnUnloadVessel();
-
-			if (!AssetLoader.Instance.allAssetsLoaded) return;
-
-			StopAllCoroutines();
 
 			RemoveVesselFx(false);
 		}
@@ -602,10 +607,12 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
 			// Reload if the vessel is marked for reloading
-			if (markForReload && vessel.loaded && !vessel.packed)
+			if (reloadDelayFrames > 0 && vessel.loaded && !vessel.packed)
 			{
-				markForReload = false;
-				CreateVesselFx();
+				if (--reloadDelayFrames == 0)
+				{
+					CreateVesselFx();
+				}
 			}
 
 			// Certain things only need to happen if we had a fixed update

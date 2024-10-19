@@ -279,8 +279,6 @@ namespace AtmosphericFx
 				{
 					Renderer model = models[j];
 
-					if (model.name == "atmofx_envelope_generated") continue;
-
 					// check for wheel flare
 					if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
 
@@ -555,7 +553,7 @@ namespace AtmosphericFx
 		public void ReloadVessel()
 		{
 			RemoveVesselFx(false);
-			reloadDelayFrames = Math.Max(reloadDelayFrames, 2);
+			reloadDelayFrames = Math.Max(reloadDelayFrames, 1);
 		}
 
 		/// <summary>
@@ -565,7 +563,7 @@ namespace AtmosphericFx
 		{
 			// Mark the vessel for reloading
 			RemoveVesselFx(true);
-			reloadDelayFrames = Math.Max(reloadDelayFrames, 2);
+			reloadDelayFrames = Math.Max(reloadDelayFrames, 1);
 		}
 
 		public override void OnLoadVessel()

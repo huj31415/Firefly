@@ -177,11 +177,8 @@ namespace AtmosphericFx
 			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
 
-			if (!onModify)
-			{
-				// set the current body
-				UpdateCurrentBody(vessel.mainBody);
-			}
+			// set the current body
+			UpdateCurrentBody(vessel.mainBody);
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
@@ -217,7 +214,7 @@ namespace AtmosphericFx
 			MeshRenderer renderer = envelope.gameObject.AddComponent<MeshRenderer>();
 
 			// initialize renderer
-			filter.mesh = mesh;
+			filter.sharedMesh = mesh;
 			renderer.sharedMaterial = material;
 			renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 

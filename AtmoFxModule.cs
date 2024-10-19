@@ -1,4 +1,5 @@
 using Expansions.Missions.Editor;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -61,13 +62,12 @@ namespace AtmosphericFx
 	/// </summary>
 	public class AtmoFxModule : VesselModule
 	{
-		public AtmoFxVessel fxVessel = new AtmoFxVessel();
+		public AtmoFxVessel fxVessel;
 		public bool isLoaded = false;
 
 		bool debugMode = false;
 
 		float lastFixedTime;
-		public bool bodyHasAtmo;
 		float desiredRate;
 		float lastSpeed;
 
@@ -99,12 +99,11 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		void OnVesselLoaded(bool onModify = false)
+		void CreateVesselFx()
 		{
 			// check if the vessel is actually loaded, and if it has any parts
 			if (vessel == null || (!vessel.loaded) || vessel.parts.Count < 1 )
 			{
-				EventManager.UnregisterInstance(vessel.id);
 				Logging.Log("Invalid vessel");
 				Logging.Log($"loaded: {vessel.loaded}");
 				Logging.Log($"partcount: {vessel.parts.Count}");
@@ -112,19 +111,27 @@ namespace AtmosphericFx
 				return;
 			}
 
+			if (isLoaded) return;
+
 			// check for atmosphere
 			if (!vessel.mainBody.atmosphere)
 			{
 				Logging.Log("MainBody does not have an atmosphere");
-				bodyHasAtmo = false;
 				return;
 			}
+
+			bool onModify = fxVessel != null;
 
 			Logging.Log("Loading vessel " + vessel.name);
 			Logging.Log(onModify ? "Using light method" : "Using heavy method");
 
-			Material material = fxVessel.material;
-			if (!onModify)
+			Material material;
+
+			if (onModify)
+			{
+				material = fxVessel.material;
+			}
+			else
 			{
 				fxVessel = new AtmoFxVessel();
 
@@ -151,8 +158,7 @@ namespace AtmosphericFx
 			{
 				Logging.Log("fxVessel/material is null");
 
-				VesselUnload(false);
-				EventManager.UnregisterInstance(vessel.id);
+				RemoveVesselFx(false);
 				return;
 			}
 
@@ -174,7 +180,7 @@ namespace AtmosphericFx
 			if (!onModify)
 			{
 				// set the current body
-				UpdateCurrentBody(ConfigManager.Instance.GetVesselBody(vessel), vessel.mainBody);
+				UpdateCurrentBody(vessel.mainBody);
 			}
 
 			Logging.Log("Finished loading vessel");
@@ -504,7 +510,7 @@ namespace AtmosphericFx
 		/// <summary>
 		/// Unloads the vessel, removing instances and other things like that
 		/// </summary>
-		public void VesselUnload(bool onlyEnvelopes = false)
+		public void RemoveVesselFx(bool onlyEnvelopes = false)
 		{
 			if (!isLoaded) return;
 
@@ -528,6 +534,8 @@ namespace AtmosphericFx
 				if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
 				if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
 				if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
+
+				fxVessel = null;
 			}
 
 			Logging.Log("Unloaded vessel " + vessel.vesselName);
@@ -538,37 +546,18 @@ namespace AtmosphericFx
 		/// </summary>
 		public void ReloadVessel()
 		{
-			if (!bodyHasAtmo) return;
-
-			VesselUnload(false);
-			OnVesselLoaded();
+			RemoveVesselFx(false);
+			CreateVesselFx();
 		}
 
 		/// <summary>
 		/// Similar to ReloadVessel(), but it's much lighter since it does not re-instantiate the camera and particles
 		/// </summary>
-		public void OnVesselModified()
+		public void OnVesselPartCountChanged()
 		{
-			if (!bodyHasAtmo) return;
-
 			// Mark the vessel for reloading
-			VesselUnload(true);
+			RemoveVesselFx(true);
 			markForReload = true;
-		}
-
-		/// <summary>
-		/// Coroutine which starts the OnVesselLoaded() method after some time
-		/// </summary>
-		IEnumerator LoadVesselCoroutine()
-		{
-			yield return new WaitForSecondsRealtime(2f);
-
-			for (int i = 0; i < 10; i++)
-			{
-				yield return null;
-			}
-
-			OnVesselLoaded();
 		}
 
 		public override void OnLoadVessel()
@@ -576,10 +565,8 @@ namespace AtmosphericFx
 			base.OnLoadVessel();
 
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
-			
-			EventManager.RegisterInstance(vessel.id, this);
 
-			StartCoroutine(LoadVesselCoroutine());
+			markForReload = true;
 		}
 
 		public override void OnUnloadVessel()
@@ -590,12 +577,12 @@ namespace AtmosphericFx
 
 			StopAllCoroutines();
 
-			VesselUnload(false);
+			RemoveVesselFx(false);
 		}
 
 		public void OnDestroy()
 		{
-			VesselUnload(false);
+			RemoveVesselFx(false);
 		}
 
 		void Debug_ToggleEnvelopes()
@@ -618,10 +605,10 @@ namespace AtmosphericFx
 			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
 			// Reload if the vessel is marked for reloading
-			if (markForReload)
+			if (markForReload && vessel.loaded && !vessel.packed)
 			{
 				markForReload = false;
-				OnVesselLoaded(true);
+				CreateVesselFx();
 			}
 
 			// Certain things only need to happen if we had a fixed update
@@ -678,27 +665,36 @@ namespace AtmosphericFx
 			DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.magenta);
 		}
 
-		/// <summary>
-		/// Updates the current body, and updates the properties
-		/// </summary>
-		public void UpdateCurrentBody(BodyConfig cfg, CelestialBody body)
+		public void OnVesselSOIChanged(CelestialBody body)
 		{
 			if (!body.atmosphere)
 			{
-				bodyHasAtmo = false;
-				if (isLoaded) VesselUnload(false);
+				RemoveVesselFx();
 				return;
 			}
 
-			if (!bodyHasAtmo)
+			if (!isLoaded)
 			{
-				bodyHasAtmo = true;
-				OnLoadVessel();
+				CreateVesselFx();
+				return;
 			}
 
-			currentBody = cfg;
-			fxVessel.lengthMultiplier = GetLengthMultiplier();
-			UpdateStaticMaterialProperties();
+			UpdateCurrentBody(body);
+		}
+
+		/// <summary>
+		/// Updates the current body, and updates the properties
+		/// </summary>
+		private void UpdateCurrentBody(CelestialBody body)
+		{
+			if (fxVessel != null)
+			{
+				ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
+
+				currentBody = cfg;
+				fxVessel.lengthMultiplier = GetLengthMultiplier();
+				UpdateStaticMaterialProperties();
+			}
 		}
 
 		/// <summary>

@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AtmosphericFx
+namespace Firefly
 {
 	/// <summary>
 	/// Stores a pair of floats

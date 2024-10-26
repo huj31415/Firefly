@@ -1,8 +1,7 @@
 ﻿using KSP.UI.Screens;
 using UnityEngine;
-using UnityEngine.Events;
 
-namespace AtmosphericFx
+namespace Firefly
 {
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	internal class WindowManager : MonoBehaviour

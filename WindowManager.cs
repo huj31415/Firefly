@@ -21,7 +21,7 @@ namespace AtmosphericFx
 		public bool tgl_UseColliders = false;
 		public bool tgl_DisableParticles = false;
 
-		public bool tgl_SpeedMethod = true;
+		public bool tgl_SpeedMethod = false;
 
 		// timer
 		float reloadBtnTime = 0f;

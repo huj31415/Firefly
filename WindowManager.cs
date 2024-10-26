@@ -107,7 +107,8 @@ namespace AtmosphericFx
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
-			if (!EventManager.fxInstances.TryGetValue(vessel.id, out AtmoFxModule fxModule)) return;
+			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
+			if (fxModule == null) return;
 
 			// drawing
 			GUILayout.BeginVertical();
@@ -136,13 +137,13 @@ namespace AtmosphericFx
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
-			if (!EventManager.fxInstances.TryGetValue(vessel.id, out AtmoFxModule fxModule)) return;
+			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
+			if (fxModule == null) return;
 
 			// drawing
 			GUILayout.BeginVertical();
 
 			GUILayout.Label($"Current vessel loaded? {fxModule.isLoaded}");
-			GUILayout.Label($"Mainbody atmo? {fxModule.bodyHasAtmo}");
 			GUILayout.Label($"Mod version: beta-{Versioning.Version}. This is a testing-only build.");
 			GUILayout.Label($"All assets loaded? {AssetLoader.Instance.allAssetsLoaded}");
 			GUILayout.Space(20);

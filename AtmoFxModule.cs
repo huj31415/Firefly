@@ -247,7 +247,7 @@ namespace Firefly
 					MeshRenderer r = InstantiateEnvelopeMesh(fxEnvelopes[j], parentFilter.mesh, material, true);
 					fxVessel.fxEnvelope.Add(r);
 
-					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
+					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
 				}
 
 				// skip model search
@@ -269,7 +269,7 @@ namespace Firefly
 					MeshRenderer renderer = InstantiateEnvelopeMesh(collider.transform, collider.sharedMesh, material, false);
 					fxVessel.fxEnvelope.Add(renderer);
 
-					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
+					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
 				}
 			}
 			else
@@ -280,10 +280,10 @@ namespace Firefly
 					Renderer model = models[j];
 
 					// check for wheel flare
-					if (CheckWheelFlareModel(part, model.gameObject.name)) continue;
+					if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
 
 					// check for layers
-					if (CheckLayerModel(model.transform)) continue;
+					if (Utils.CheckLayerModel(model.transform)) continue;
 
 					// try getting the mesh filter
 					bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
@@ -296,7 +296,7 @@ namespace Firefly
 					MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
 					fxVessel.fxEnvelope.Add(renderer);
 
-					if (IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
+					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
 				}
 			}
 		}
@@ -315,7 +315,7 @@ namespace Firefly
 			for (int i = 0; i < vessel.parts.Count; i++)
 			{
 				Part part = vessel.parts[i];
-				if (!IsPartCompatible(part)) continue;
+				if (!Utils.IsPartCompatible(part)) continue;
 
 				CreatePartEnvelope(part, material);
 			}
@@ -641,7 +641,9 @@ namespace Firefly
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
-			}
+
+                
+            }
 		}
 
 		public void OnGUI()
@@ -760,7 +762,7 @@ namespace Firefly
 
 			for (int i = 0; i < vsl.parts.Count; i++)
 			{
-				if (!IsPartBoundCompatible(vsl.parts[i])) continue;
+				if (!Utils.IsPartBoundCompatible(vsl.parts[i])) continue;
 
 				List<Renderer> renderers = vsl.parts[i].FindModelRenderersCached();
 				for (int r = 0; r < renderers.Count; r++)
@@ -770,7 +772,7 @@ namespace Firefly
 					if (meshFilter.mesh == null) continue;
 
 					// check if the mesh is legal
-					if (CheckLayerModel(renderers[r].transform)) continue;
+					if (Utils.CheckLayerModel(renderers[r].transform)) continue;
 
 					// get the corners of the mesh
 					//meshFilter.mesh.RecalculateBounds();
@@ -939,49 +941,6 @@ namespace Firefly
 			Vector3 localPos = fxVessel.vesselBoundCenter + distance * localDir;
 
 			return vessel.transform.TransformPoint(localPos);
-		}
-
-		/// <summary>
-		/// Is part legible for bound calculations?
-		/// </summary>
-		bool IsPartBoundCompatible(Part part)
-		{
-			return IsPartCompatible(part) && !(
-				part.Modules.Contains("ModuleParachute")
-			);
-		}
-
-		/// <summary>
-		/// Is part legible for fx envelope calculations?
-		/// </summary>
-		bool IsPartCompatible(Part part)
-		{
-			return !(
-				part.Modules.Contains("ModuleConformalDecal") || 
-				part.Modules.Contains("ModuleConformalFlag") || 
-				part.Modules.Contains("ModuleConformalText")
-			);
-		}
-
-		/// <summary>
-		/// Landing gear have flare meshes for some reason, this function checks if a mesh is a flare or not
-		/// </summary>
-		bool CheckWheelFlareModel(Part part, string model)
-		{
-			bool isFlare = string.Equals(model, "flare", System.StringComparison.OrdinalIgnoreCase);
-			bool isWheel = part.HasModuleImplementing<ModuleWheelBase>();
-
-			return isFlare && isWheel;
-		}
-
-		/// <summary>
-		/// Check if a model's layer is illegal
-		/// </summary>
-		bool CheckLayerModel(Transform model)
-		{
-			return (
-				model.gameObject.layer == 1
-			);
 		}
 	}
 }

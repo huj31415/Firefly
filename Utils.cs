@@ -58,5 +58,48 @@ namespace Firefly
 
 			return isFormatted;
 		}
+
+		/// <summary>
+		/// Is part legible for bound calculations?
+		/// </summary>
+		public static bool IsPartBoundCompatible(Part part)
+		{
+			return IsPartCompatible(part) && !(
+				part.Modules.Contains("ModuleParachute")
+			);
+		}
+
+		/// <summary>
+		/// Is part legible for fx envelope calculations?
+		/// </summary>
+		public static bool IsPartCompatible(Part part)
+		{
+			return !(
+				part.Modules.Contains("ModuleConformalDecal") ||
+				part.Modules.Contains("ModuleConformalFlag") ||
+				part.Modules.Contains("ModuleConformalText")
+			);
+		}
+
+		/// <summary>
+		/// Landing gear have flare meshes for some reason, this function checks if a mesh is a flare or not
+		/// </summary>
+		public static bool CheckWheelFlareModel(Part part, string model)
+		{
+			bool isFlare = string.Equals(model, "flare", System.StringComparison.OrdinalIgnoreCase);
+			bool isWheel = part.HasModuleImplementing<ModuleWheelBase>();
+
+			return isFlare && isWheel;
+		}
+
+		/// <summary>
+		/// Check if a model's layer is incorrect
+		/// </summary>
+		public static bool CheckLayerModel(Transform model)
+		{
+			return (
+				model.gameObject.layer == 1
+			);
+		}
 	}
 }

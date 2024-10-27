@@ -101,5 +101,50 @@ namespace Firefly
 				model.gameObject.layer == 1
 			);
 		}
+
+		/// <summary>
+		/// Returns the angle of attack
+		/// </summary>
+		public static float GetAngleOfAttack(Vessel vessel)
+		{
+			// Code courtesy FAR.
+			Transform refTransform = vessel.GetTransform();
+			Vector3 velVectorNorm = vessel.srf_velocity.normalized;
+
+			Vector3 tmpVec = refTransform.up * Vector3.Dot(refTransform.up, velVectorNorm) + refTransform.forward * Vector3.Dot(refTransform.forward, velVectorNorm);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+			float AoA = Vector3.Dot(tmpVec.normalized, refTransform.forward);
+			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
+			if (float.IsNaN(AoA))
+			{
+				AoA = 0.0f;
+			}
+
+			return AoA;
+		}
+
+		/// <summary>
+		/// Returns the corners of a given Bounds object
+		/// </summary>
+		public static Vector3[] GetBoundCorners(Bounds bounds)
+		{
+			Vector3 center = bounds.center;
+			float x = bounds.extents.x;
+			float y = bounds.extents.y;
+			float z = bounds.extents.z;
+
+			Vector3[] corners = new Vector3[8];
+
+			corners[0] = center + new Vector3(x, y, z);
+			corners[1] = center + new Vector3(x, y, -z);
+			corners[2] = center + new Vector3(-x, y, z);
+			corners[3] = center + new Vector3(-x, y, -z);
+
+			corners[4] = center + new Vector3(x, -y, z);
+			corners[5] = center + new Vector3(x, -y, -z);
+			corners[6] = center + new Vector3(-x, -y, z);
+			corners[7] = center + new Vector3(-x, -y, -z);
+
+			return corners;
+		}
 	}
 }

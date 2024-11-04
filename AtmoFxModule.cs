@@ -641,8 +641,6 @@ namespace Firefly
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
-
-                
             }
 		}
 

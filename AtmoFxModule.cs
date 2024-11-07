@@ -485,7 +485,7 @@ namespace Firefly
 			Vector3 direction = vessel.transform.InverseTransformDirection(GetEntryVelocity());
 			Vector3 worldVel = -GetEntryVelocity();
 
-			// sparks
+			// sparks	
 			fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
 
 			// chunks

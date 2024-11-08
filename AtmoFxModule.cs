@@ -173,7 +173,12 @@ namespace Firefly
 			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			// calculate the vessel bounds
-			CalculateVesselBounds(fxVessel, vessel);
+			bool correctBounds = CalculateVesselBounds(fxVessel, vessel, true);
+			if (!correctBounds)
+			{
+				Logging.Log("Recalculating invalid vessel bounds");
+				CalculateVesselBounds(fxVessel, vessel, false);
+			}
 			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
 
@@ -221,6 +226,7 @@ namespace Firefly
 			// set model-specific properties
 			MaterialPropertyBlock properties = new MaterialPropertyBlock();
 			properties.SetVector("_ModelScale", parent.lossyScale);
+			properties.SetVector("_EnvelopeScaleFactor", new Vector3(1.05f, 1.07f, 1.05f));
 			renderer.SetPropertyBlock(properties);
 
 			return renderer;
@@ -724,12 +730,11 @@ namespace Firefly
 			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}
 
-		
-
 		/// <summary>
 		/// Calculates the total bounds of the entire vessel
+		/// Returns if the calculation resulted in a correct bounding box
 		/// </summary>
-		void CalculateVesselBounds(AtmoFxVessel fxVessel, Vessel vsl)
+		bool CalculateVesselBounds(AtmoFxVessel fxVessel, Vessel vsl, bool doChecks)
 		{
 			// reset the corners
 			fxVessel.vesselMaxCorner = new Vector3(float.MinValue, float.MinValue, float.MinValue);
@@ -737,7 +742,7 @@ namespace Firefly
 
 			for (int i = 0; i < vsl.parts.Count; i++)
 			{
-				if (!Utils.IsPartBoundCompatible(vsl.parts[i])) continue;
+				if ((!Utils.IsPartBoundCompatible(vsl.parts[i])) && doChecks) continue;
 
 				List<Renderer> renderers = vsl.parts[i].FindModelRenderersCached();
 				for (int r = 0; r < renderers.Count; r++)
@@ -773,6 +778,8 @@ namespace Firefly
 				}
 			}
 
+			if (fxVessel.vesselMaxCorner.x == float.MinValue) return false;  // return false if the corner hasn't changed
+
 			Vector3 vesselSize = new Vector3(
 				Mathf.Abs(fxVessel.vesselMaxCorner.x - fxVessel.vesselMinCorner.x),
 				Mathf.Abs(fxVessel.vesselMaxCorner.y - fxVessel.vesselMinCorner.y),
@@ -786,6 +793,8 @@ namespace Firefly
 			fxVessel.vesselBoundCenter = bounds.center;
 			fxVessel.vesselBoundExtents = vesselSize / 2f;
 			fxVessel.vesselBoundRadius = fxVessel.vesselBoundExtents.magnitude;
+
+			return true;
 		}
 
 		/// <summary>

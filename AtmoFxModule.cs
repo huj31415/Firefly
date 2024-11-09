@@ -847,7 +847,6 @@ namespace Firefly
 					}
 				}
 
-
 				// convert to m/s
 				spd = (float)(mach * vesselMach);
 				spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);

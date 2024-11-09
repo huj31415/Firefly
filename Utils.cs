@@ -5,7 +5,7 @@ namespace Firefly
 	public static class AtmoFxLayers
 	{
 		public const int Spacecraft = 0;
-		public const int Fx = 1;
+		public const int Fx = 23;
 	}
 
 	public class Logging

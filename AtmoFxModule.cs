@@ -101,6 +101,8 @@ namespace Firefly
 		/// </summary>
 		void CreateVesselFx()
 		{
+			if (!WindowManager.Instance.tgl_EffectToggle) return;
+
 			// check if the vessel is actually loaded, and if it has any parts
 			if (vessel == null || (!vessel.loaded) || vessel.parts.Count < 1 )
 			{
@@ -525,7 +527,7 @@ namespace Firefly
 				if (renderer != null)
 				{
 					renderer.transform.SetParent(null);
-					Destroy(renderer);
+					Destroy(renderer.gameObject);
 				}
 			}
 

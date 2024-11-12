@@ -22,6 +22,8 @@ namespace Firefly
 
 		public bool tgl_SpeedMethod = false;
 
+		public bool tgl_EffectToggle = true;
+
 		// timer
 		float reloadBtnTime = 0f;
 		
@@ -123,6 +125,7 @@ namespace Firefly
 			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
 			DrawConfigField("Speed method", ref tgl_SpeedMethod);
 			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
+			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 
 			// end
 			GUILayout.EndVertical();
@@ -136,6 +139,7 @@ namespace Firefly
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
+			if (vessel == null) return;
 			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
 			if (fxModule == null) return;
 

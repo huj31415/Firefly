@@ -1,8 +1,8 @@
-using Expansions.Missions.Editor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Firefly
 {
@@ -27,7 +27,10 @@ namespace Firefly
 	public class AtmoFxVessel
 	{
 		public List<Renderer> fxEnvelope = new List<Renderer>();
+		public List<Transform> generatedFxEnvelope = new List<Transform>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
+
+		public CommandBuffer commandBuffer;
 
 		public bool hasParticles = false;
 
@@ -164,12 +167,18 @@ namespace Firefly
 				return;
 			}
 
+			// create the command buffer
+			if (!onModify) InitializeCommandBuffer();
+
 			// reset part cache
 			ResetPartModelCache();
 
 			// create the fx envelopes
 			UpdateFxEnvelopes(material);
 			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
+
+			// populate the command buffer
+			PopulateCommandBuffer();
 
 			// create the particles
 			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();  // run the function only if they're enabled in settings
@@ -189,6 +198,40 @@ namespace Firefly
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
+		}
+
+		/// <summary>
+		/// Initializes the CommandBuffer for the vessel, and adds it to the cameras
+		/// </summary>
+		void InitializeCommandBuffer()
+		{
+			fxVessel.commandBuffer = new CommandBuffer();
+			fxVessel.commandBuffer.name = $"Firefly atmospheric effects [{vessel.vesselName}]";
+			fxVessel.commandBuffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
+			CameraManager.Instance.AddCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
+		}
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		void PopulateCommandBuffer()
+		{
+			fxVessel.commandBuffer.Clear();
+
+			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
+			{
+				// Iterate over every submesh
+				for (int j = 0; j < fxVessel.fxEnvelope[i].sharedMaterials.Length; j++)
+				{
+					fxVessel.commandBuffer.DrawRenderer(fxVessel.fxEnvelope[i], fxVessel.material, j);
+				}
+			}
+		}
+
+		void DestroyCommandBuffer()
+		{
+			CameraManager.Instance.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
+			fxVessel.commandBuffer.Dispose();
 		}
 
 		/// <summary>
@@ -223,12 +266,12 @@ namespace Firefly
 			// initialize renderer
 			filter.sharedMesh = mesh;
 			renderer.sharedMaterial = material;
-			renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+			renderer.shadowCastingMode = ShadowCastingMode.Off;
 
 			// set model-specific properties
 			MaterialPropertyBlock properties = new MaterialPropertyBlock();
 			properties.SetVector("_ModelScale", parent.lossyScale);
-			properties.SetVector("_EnvelopeScaleFactor", new Vector3(1.05f, 1.07f, 1.05f));
+			properties.SetVector("_EnvelopeScaleFactor", envelope.localScale);
 			renderer.SetPropertyBlock(properties);
 
 			return renderer;
@@ -247,65 +290,38 @@ namespace Firefly
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{
 					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter parentFilter)) continue;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
-					// disable the mesh
-					if (fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) parentRenderer.enabled = false;
+					fxVessel.fxEnvelope.Add(parentRenderer);
 
-					// needs to be a separate transform, otherwise it breaks for some reason
-					MeshRenderer r = InstantiateEnvelopeMesh(fxEnvelopes[j], parentFilter.mesh, material, true);
-					fxVessel.fxEnvelope.Add(r);
-
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
+					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(parentRenderer);
 				}
 
 				// skip model search
 				return;
 			}
 
-			if (ConfigManager.Instance.modSettings.useColliders)
+			// TODO: reminder that collider support is disabled for commandbuffer branch
+
+			List<Renderer> models = part.FindModelRenderersCached();
+			for (int j = 0; j < models.Count; j++)
 			{
-				Collider[] colliders = part.GetPartColliders();
-				for (int j = 0; j < colliders.Length; j++)
-				{
-					MeshCollider collider = colliders[j] as MeshCollider;
-					if (collider == null)
-					{
-						Logging.Log($"Collider {colliders[j].gameObject.name} isn't a mesh, ignoring");
-						continue;
-					}
+				Renderer model = models[j];
 
-					MeshRenderer renderer = InstantiateEnvelopeMesh(collider.transform, collider.sharedMesh, material, false);
-					fxVessel.fxEnvelope.Add(renderer);
+				// check for wheel flare
+				if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
 
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
-				}
-			}
-			else
-			{
-				List<Renderer> models = part.FindModelRenderersCached();
-				for (int j = 0; j < models.Count; j++)
-				{
-					Renderer model = models[j];
+				// check for layers
+				if (Utils.CheckLayerModel(model.transform)) continue;
 
-					// check for wheel flare
-					if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
+				MaterialPropertyBlock properties = new MaterialPropertyBlock();
+				properties.SetVector("_ModelScale", model.transform.lossyScale);
+				properties.SetVector("_EnvelopeScaleFactor", new Vector3(1.05f, 1.07f, 1.05f));
+				model.SetPropertyBlock(properties);
 
-					// check for layers
-					if (Utils.CheckLayerModel(model.transform)) continue;
+				fxVessel.fxEnvelope.Add(model);
 
-					// try getting the mesh filter
-					bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
-					if (!hasMeshFilter) continue;
-
-					// try getting the mesh
-					Mesh mesh = filter.sharedMesh;
-					if (mesh == null) continue;
-
-					MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
-					fxVessel.fxEnvelope.Add(renderer);
-
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
-				}
+				if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(model);
 			}
 		}
 
@@ -521,16 +537,6 @@ namespace Firefly
 
 			isLoaded = false;
 
-			// destroy the fx envelope
-			foreach (var renderer in fxVessel.fxEnvelope)
-			{
-				if (renderer != null)
-				{
-					renderer.transform.SetParent(null);
-					Destroy(renderer.gameObject);
-				}
-			}
-
 			Destroy(fxVessel.totalEnvelope);
 
 			fxVessel.fxEnvelope.Clear();
@@ -548,6 +554,9 @@ namespace Firefly
 				if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
 				if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
 				if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
+
+				// destroy the commandbuffer
+				DestroyCommandBuffer();
 
 				fxVessel = null;
 			}

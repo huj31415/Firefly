@@ -247,41 +247,9 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Creates one envelope mesh, with a given parent, mesh and material
-		/// </summary>
-		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material, bool premade)
-		{
-			// create envelope object
-			Transform envelope = new GameObject("atmofx_envelope_generated").transform;
-			envelope.gameObject.layer = AtmoFxLayers.Fx;
-			envelope.parent = parent;
-
-			envelope.localPosition = Vector3.zero;
-			envelope.localRotation = Quaternion.identity;
-			envelope.localScale = new Vector3(premade ? 1f : 1.05f, premade ? 1f : 1.07f, premade ? 1f : 1.05f);
-
-			// add mesh filter and renderer to the envelope
-			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
-			MeshRenderer renderer = envelope.gameObject.AddComponent<MeshRenderer>();
-
-			// initialize renderer
-			filter.sharedMesh = mesh;
-			renderer.sharedMaterial = material;
-			renderer.shadowCastingMode = ShadowCastingMode.Off;
-
-			// set model-specific properties
-			MaterialPropertyBlock properties = new MaterialPropertyBlock();
-			properties.SetVector("_ModelScale", parent.lossyScale);
-			properties.SetVector("_EnvelopeScaleFactor", envelope.localScale);
-			renderer.SetPropertyBlock(properties);
-
-			return renderer;
-		}
-
-		/// <summary>
 		/// Processes one part and creates the envelope mesh for it
 		/// </summary>
-		void CreatePartEnvelope(Part part, Material material)
+		void CreatePartEnvelope(Part part)
 		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length > 0)
@@ -290,6 +258,9 @@ namespace Firefly
 
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{
+					// check if active
+					if (!fxEnvelopes[j].gameObject.activeSelf) continue;
+
 					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter parentFilter)) continue;
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
@@ -310,6 +281,9 @@ namespace Firefly
 			for (int j = 0; j < models.Count; j++)
 			{
 				Renderer model = models[j];
+
+				// check if active
+				if (!model.gameObject.activeSelf) continue;
 
 				// check for wheel flare
 				if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
@@ -352,7 +326,7 @@ namespace Firefly
 				Part part = vessel.parts[i];
 				if (!Utils.IsPartCompatible(part)) continue;
 
-				CreatePartEnvelope(part, material);
+				CreatePartEnvelope(part);
 			}
 
 			// set the vessel position to zero, to make combining possible

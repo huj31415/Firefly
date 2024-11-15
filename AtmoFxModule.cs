@@ -28,6 +28,7 @@ namespace Firefly
 	{
 		public List<Renderer> fxEnvelope = new List<Renderer>();
 		public List<Vector3> fxEnvelopeProperties = new List<Vector3>();
+		public List<Renderer> fxEnvelopeGenerated = new List<Renderer>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
 
 		public CommandBuffer commandBuffer;
@@ -220,8 +221,8 @@ namespace Firefly
 
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
-				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", fxVessel.fxEnvelopeProperties[i]);
-				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i + 1]);
+				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", fxVessel.fxEnvelopeProperties[i*2]);
+				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i*2 + 1]);
 				fxVessel.commandBuffer.DrawRenderer(fxVessel.fxEnvelope[i], fxVessel.material);
 			}
 		}
@@ -247,6 +248,31 @@ namespace Firefly
 		}
 
 		/// <summary>
+		/// Creates one envelope mesh, with a given parent, mesh and material
+		/// </summary>
+		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material)
+		{
+			// create envelope object
+			Transform envelope = new GameObject("atmofx_envelope_generated").transform;
+			envelope.gameObject.layer = AtmoFxLayers.Fx;
+			envelope.parent = parent;
+
+			envelope.localPosition = Vector3.zero;
+			envelope.localRotation = Quaternion.identity;
+
+			// add mesh filter and renderer to the envelope
+			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
+			MeshRenderer renderer = envelope.gameObject.AddComponent<MeshRenderer>();
+
+			// initialize renderer
+			filter.sharedMesh = mesh;
+			renderer.sharedMaterial = material;
+			renderer.shadowCastingMode = ShadowCastingMode.Off;
+
+			return renderer;
+		}
+
+		/// <summary>
 		/// Processes one part and creates the envelope mesh for it
 		/// </summary>
 		void CreatePartEnvelope(Part part)
@@ -259,10 +285,12 @@ namespace Firefly
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{
 					// check if active
-					if (!fxEnvelopes[j].gameObject.activeSelf) continue;
+					if (!fxEnvelopes[j].gameObject.activeInHierarchy) continue;
 
 					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter parentFilter)) continue;
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
+
+					parentRenderer.enabled = false;
 
 					fxVessel.fxEnvelope.Add(parentRenderer);
 					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_ModelScale
@@ -283,7 +311,7 @@ namespace Firefly
 				Renderer model = models[j];
 
 				// check if active
-				if (!model.gameObject.activeSelf) continue;
+				if (!model.gameObject.activeInHierarchy) continue;
 
 				// check for wheel flare
 				if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
@@ -319,6 +347,7 @@ namespace Firefly
 
 			fxVessel.fxEnvelope.Clear();
 			fxVessel.fxEnvelopeProperties.Clear();
+			fxVessel.fxEnvelopeGenerated.Clear();
 			fxVessel.particleFxEnvelope.Clear();
 
 			for (int i = 0; i < vessel.parts.Count; i++)

@@ -45,13 +45,23 @@ namespace Firefly
 		void AddCommandBufferFlight(CameraEvent evt, CommandBuffer buf)
 		{
 			Camera flightCam = FlightCamera.fetch.mainCamera;
-			flightCam?.AddCommandBuffer(evt, buf);
+			if (flightCam == null) return;
+
+			CommandBuffer[] buffers = flightCam.GetCommandBuffers(evt);
+			if (buffers.Contains(buf)) return;  // detect duplicates
+
+			flightCam.AddCommandBuffer(evt, buf);
 		}
 
 		void AddCommandBufferInternal(CameraEvent evt, CommandBuffer buf)
 		{
 			Camera internalCam = InternalCamera.Instance?.GetComponent<Camera>();
-			internalCam?.AddCommandBuffer(evt, buf);
+			if (internalCam == null) return;
+
+			CommandBuffer[] buffers = internalCam.GetCommandBuffers(evt);
+			if (buffers.Contains(buf)) return;  // detect duplicates
+
+			internalCam.AddCommandBuffer(evt, buf);
 		}
 
 		public void OnCameraChange(global::CameraManager.CameraMode mode)

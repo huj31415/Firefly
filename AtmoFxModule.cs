@@ -169,7 +169,7 @@ namespace Firefly
 			}
 
 			// create the command buffer
-			if (!onModify) InitializeCommandBuffer();
+			InitializeCommandBuffer();
 
 			// reset part cache
 			ResetPartModelCache();
@@ -245,31 +245,6 @@ namespace Firefly
 			{
 				vessel.parts[i].ResetModelRenderersCache();
 			}
-		}
-
-		/// <summary>
-		/// Creates one envelope mesh, with a given parent, mesh and material
-		/// </summary>
-		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material)
-		{
-			// create envelope object
-			Transform envelope = new GameObject("atmofx_envelope_generated").transform;
-			envelope.gameObject.layer = AtmoFxLayers.Fx;
-			envelope.parent = parent;
-
-			envelope.localPosition = Vector3.zero;
-			envelope.localRotation = Quaternion.identity;
-
-			// add mesh filter and renderer to the envelope
-			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
-			MeshRenderer renderer = envelope.gameObject.AddComponent<MeshRenderer>();
-
-			// initialize renderer
-			filter.sharedMesh = mesh;
-			renderer.sharedMaterial = material;
-			renderer.shadowCastingMode = ShadowCastingMode.Off;
-
-			return renderer;
 		}
 
 		/// <summary>
@@ -554,6 +529,9 @@ namespace Firefly
 
 			Destroy(fxVessel.totalEnvelope);
 
+			// destroy the commandbuffer
+			DestroyCommandBuffer();
+
 			fxVessel.fxEnvelope.Clear();
 			fxVessel.fxEnvelopeProperties.Clear();
 			fxVessel.particleFxEnvelope.Clear();
@@ -570,9 +548,6 @@ namespace Firefly
 				if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
 				if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
 				if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
-
-				// destroy the commandbuffer
-				DestroyCommandBuffer();
 
 				fxVessel = null;
 			}

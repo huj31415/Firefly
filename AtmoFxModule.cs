@@ -27,7 +27,7 @@ namespace Firefly
 	public class AtmoFxVessel
 	{
 		public List<Renderer> fxEnvelope = new List<Renderer>();
-		public List<Transform> generatedFxEnvelope = new List<Transform>();
+		public List<Vector3> fxEnvelopeProperties = new List<Vector3>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
 
 		public CommandBuffer commandBuffer;
@@ -212,7 +212,7 @@ namespace Firefly
 		}
 		
 		/// <summary>
-		/// 
+		/// Populates the command buffer with the envelope
 		/// </summary>
 		void PopulateCommandBuffer()
 		{
@@ -220,14 +220,15 @@ namespace Firefly
 
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
-				// Iterate over every submesh
-				for (int j = 0; j < fxVessel.fxEnvelope[i].sharedMaterials.Length; j++)
-				{
-					fxVessel.commandBuffer.DrawRenderer(fxVessel.fxEnvelope[i], fxVessel.material, j);
-				}
+				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", fxVessel.fxEnvelopeProperties[i]);
+				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i + 1]);
+				fxVessel.commandBuffer.DrawRenderer(fxVessel.fxEnvelope[i], fxVessel.material);
 			}
 		}
 
+		/// <summary>
+		/// Destroys and disposes the command buffer
+		/// </summary>
 		void DestroyCommandBuffer()
 		{
 			CameraManager.Instance.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
@@ -293,6 +294,8 @@ namespace Firefly
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
 					fxVessel.fxEnvelope.Add(parentRenderer);
+					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_ModelScale
+					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_EnvelopeScaleFactor
 
 					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(parentRenderer);
 				}
@@ -314,14 +317,21 @@ namespace Firefly
 				// check for layers
 				if (Utils.CheckLayerModel(model.transform)) continue;
 
-				MaterialPropertyBlock properties = new MaterialPropertyBlock();
-				properties.SetVector("_ModelScale", model.transform.lossyScale);
-				properties.SetVector("_EnvelopeScaleFactor", new Vector3(1.05f, 1.07f, 1.05f));
-				model.SetPropertyBlock(properties);
+				// try getting the mesh filter
+				bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
+				if (!hasMeshFilter) continue;
+
+				// try getting the mesh
+				Mesh mesh = filter.sharedMesh;
+				if (mesh == null) continue;
+
+				if (!Utils.IsPartBoundCompatible(part)) continue;
 
 				fxVessel.fxEnvelope.Add(model);
+				fxVessel.fxEnvelopeProperties.Add(model.transform.lossyScale);  //_ModelScale
+				fxVessel.fxEnvelopeProperties.Add(new Vector3(1.05f, 1.07f, 1.05f));  //_EnvelopeScaleFactor
 
-				if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(model);
+				fxVessel.particleFxEnvelope.Add(model);
 			}
 		}
 
@@ -334,6 +344,7 @@ namespace Firefly
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
 
 			fxVessel.fxEnvelope.Clear();
+			fxVessel.fxEnvelopeProperties.Clear();
 			fxVessel.particleFxEnvelope.Clear();
 
 			for (int i = 0; i < vessel.parts.Count; i++)
@@ -353,6 +364,7 @@ namespace Firefly
 			for (int i = 0; i < combine.Length; i++)
 			{
 				MeshFilter filter = fxVessel.particleFxEnvelope[i].GetComponent<MeshFilter>();
+				if (filter == null) continue;
 
 				// set the part position to match the vessel
 				filter.transform.position -= orgPosition;
@@ -540,6 +552,7 @@ namespace Firefly
 			Destroy(fxVessel.totalEnvelope);
 
 			fxVessel.fxEnvelope.Clear();
+			fxVessel.fxEnvelopeProperties.Clear();
 			fxVessel.particleFxEnvelope.Clear();
 
 			if (!onlyEnvelopes)

@@ -14,19 +14,12 @@ namespace Firefly
 
 			GameEvents.onVesselPartCountChanged.Add(OnVesselPartCountChanged);
 			GameEvents.onVesselSOIChanged.Add(OnVesselSOIChanged);
-			GameEvents.OnCameraChange.Add(OnCameraChange);
 		}
 
 		public void OnDestroy()
 		{
 			GameEvents.onVesselPartCountChanged.Remove(OnVesselPartCountChanged);
 			GameEvents.onVesselSOIChanged.Remove(OnVesselSOIChanged);
-			GameEvents.OnCameraChange.Remove(OnCameraChange);
-		}
-
-		void OnCameraChange(global::CameraManager.CameraMode mode)
-		{
-			CameraManager.Instance.OnCameraChange(mode);
 		}
 
 		/// <summary>

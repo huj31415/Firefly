@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -30,6 +31,11 @@ namespace Firefly
 
 		public void AddCommandBuffer(CameraEvent evt, CommandBuffer buf)
 		{
+			for (int i = 0; i < cameraBuffers.Count; i++)
+			{
+				if (cameraBuffers[i].Key == evt && cameraBuffers[i].Value == buf) return;
+			}
+
 			AddCommandBufferFlight(evt, buf);
 			AddCommandBufferInternal(evt, buf);
 
@@ -40,6 +46,15 @@ namespace Firefly
 		{
 			FlightCamera.fetch.mainCamera?.RemoveCommandBuffer(evt, buf);
 			InternalCamera.Instance?.GetComponent<Camera>().RemoveCommandBuffer(evt, buf);
+
+			for (int i = 0; i < cameraBuffers.Count; i++)
+			{
+				if (cameraBuffers[i].Key == evt && cameraBuffers[i].Value == buf)
+				{
+					cameraBuffers.RemoveAt(i);
+					break;
+				}
+			}
 		}
 
 		void AddCommandBufferFlight(CameraEvent evt, CommandBuffer buf)
@@ -66,16 +81,11 @@ namespace Firefly
 
 		public void OnCameraChange(global::CameraManager.CameraMode mode)
 		{
-			Camera flightCam = FlightCamera.fetch.mainCamera;
-			Camera internalCam = InternalCamera.Instance?.GetComponent<Camera>();
+			if (mode != global::CameraManager.CameraMode.IVA || mode != global::CameraManager.CameraMode.Internal) return;
 
 			for (int i = 0; i < cameraBuffers.Count; i++)
-			{
-				CommandBuffer[] buffers = flightCam?.GetCommandBuffers(cameraBuffers[i].Key);
-				if (!buffers.Contains(cameraBuffers[i].Value)) AddCommandBufferFlight(cameraBuffers[i].Key, cameraBuffers[i].Value);
-
-				buffers = internalCam?.GetCommandBuffers(cameraBuffers[i].Key);
-				if (!buffers.Contains(cameraBuffers[i].Value)) AddCommandBufferInternal(cameraBuffers[i].Key, cameraBuffers[i].Value);
+			{ 
+				AddCommandBufferInternal(cameraBuffers[i].Key, cameraBuffers[i].Value);
 			}
 		}
 

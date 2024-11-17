@@ -39,10 +39,7 @@ namespace Firefly
 		{
 			var module = action.host.FindVesselModuleImplementing<AtmoFxModule>();
 
-			if (module != null)
-			{
-				module.OnVesselSOIChanged(action.to);
-			}
+			if (module != null) module.OnVesselSOIChanged(action.to);
 		}
 	}
 }

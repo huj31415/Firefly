@@ -262,7 +262,7 @@ namespace Firefly
 					// check if active
 					if (!fxEnvelopes[j].gameObject.activeInHierarchy) continue;
 
-					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter parentFilter)) continue;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter _)) continue;
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
 					parentRenderer.enabled = false;
@@ -812,7 +812,7 @@ namespace Firefly
 		/// </summary>
 		float GetEntrySpeed()
 		{
-			float spd = 0f;
+			float spd;
 
 			if (WindowManager.Instance.tgl_SpeedMethod)
 			{

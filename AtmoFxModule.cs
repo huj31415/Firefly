@@ -175,7 +175,7 @@ namespace Firefly
 			ResetPartModelCache();
 
 			// create the fx envelopes
-			UpdateFxEnvelopes(material);
+			UpdateFxEnvelopes();
 			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
 
 			// populate the command buffer
@@ -315,7 +315,7 @@ namespace Firefly
 		/// <summary>
 		/// Creates the effect envelopes
 		/// </summary>
-		void UpdateFxEnvelopes(Material material)
+		void UpdateFxEnvelopes()
 		{
 			Logging.Log($"Updating fx envelopes for vessel {vessel.name}");
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");

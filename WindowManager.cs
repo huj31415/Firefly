@@ -112,7 +112,14 @@ namespace Firefly
 			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
 			if (fxModule == null) return;
 
-			if (!fxModule.isLoaded) return;
+			if (!fxModule.isLoaded)
+			{
+				GUILayout.BeginVertical();
+				GUILayout.Label("FX are not loaded for the active vessel");
+				GUILayout.EndVertical();
+				GUI.DragWindow();
+				return;
+			}
 
 			// drawing
 			GUILayout.BeginVertical();
@@ -146,7 +153,14 @@ namespace Firefly
 			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
 			if (fxModule == null) return;
 
-			if (!fxModule.isLoaded) return;
+			if (!fxModule.isLoaded)
+			{
+				GUILayout.BeginVertical();
+				GUILayout.Label("FX are not loaded for the active vessel");
+				GUILayout.EndVertical();
+				GUI.DragWindow();
+				return;
+			}
 
 			// drawing
 			GUILayout.BeginVertical();

@@ -1,3 +1,4 @@
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -74,6 +75,8 @@ namespace Firefly
 		float lastFixedTime;
 		float desiredRate;
 		float lastSpeed;
+
+		double vslLastAlt;
 
 		public BodyConfig currentBody;
 
@@ -630,6 +633,8 @@ namespace Firefly
 
 		public void LateUpdate()
 		{
+			float entrySpeed = GetAdjustedEntrySpeed();
+
 			// Certain things only need to happen if we had a fixed update
 			if (Time.fixedTime != lastFixedTime && isLoaded)
 			{
@@ -649,7 +654,7 @@ namespace Firefly
 
 				// update the material with dynamic properties
 				fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
-				fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
+				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
 				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
 				fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
@@ -658,6 +663,20 @@ namespace Firefly
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+			}
+
+			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so
+			if (vessel.altitude > vessel.mainBody.atmosphereDepth && entrySpeed < 50f && isLoaded)
+			{
+				RemoveVesselFx(false);
+			}
+
+			// Check if the vessel is not marked for reloading and if it's entering the atmosphere
+			double descentRate = vessel.altitude - vslLastAlt;
+			vslLastAlt = vessel.altitude;
+			if (reloadDelayFrames < 1 && descentRate < 0 && vessel.altitude <= vessel.mainBody.atmosphereDepth && !isLoaded)
+			{
+				CreateVesselFx();
 			}
 		}
 

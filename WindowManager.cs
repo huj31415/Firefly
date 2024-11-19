@@ -108,8 +108,11 @@ namespace Firefly
 		{
 			// init
 			Vessel vessel = FlightGlobals.ActiveVessel;
+			if (vessel == null) return;
 			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
 			if (fxModule == null) return;
+
+			if (!fxModule.isLoaded) return;
 
 			// drawing
 			GUILayout.BeginVertical();
@@ -142,6 +145,8 @@ namespace Firefly
 			if (vessel == null) return;
 			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
 			if (fxModule == null) return;
+
+			if (!fxModule.isLoaded) return;
 
 			// drawing
 			GUILayout.BeginVertical();

@@ -294,13 +294,19 @@ namespace Firefly
 				// check for layers
 				if (Utils.CheckLayerModel(model.transform)) continue;
 
-				// try getting the mesh filter
-				bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
-				if (!hasMeshFilter) continue;
+				// is skinned
+				bool isSkinnedRenderer = model.TryGetComponent(out SkinnedMeshRenderer skinnedModel);
 
-				// try getting the mesh
-				Mesh mesh = filter.sharedMesh;
-				if (mesh == null) continue;
+				if (!isSkinnedRenderer)  // if it's a normal model, check if it has a filter and a mesh
+				{
+					// try getting the mesh filter
+					bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
+					if (!hasMeshFilter) continue;
+
+					// try getting the mesh
+					Mesh mesh = filter.sharedMesh;
+					if (mesh == null) continue;
+				}
 
 				if (!Utils.IsPartBoundCompatible(part)) continue;
 
@@ -620,7 +626,10 @@ namespace Firefly
 					CreateVesselFx();
 				}
 			}
+		}
 
+		public void LateUpdate()
+		{
 			// Certain things only need to happen if we had a fixed update
 			if (Time.fixedTime != lastFixedTime && isLoaded)
 			{
@@ -649,7 +658,7 @@ namespace Firefly
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
-            }
+			}
 		}
 
 		public void OnGUI()
@@ -749,16 +758,24 @@ namespace Firefly
 				List<Renderer> renderers = vsl.parts[i].FindModelRenderersCached();
 				for (int r = 0; r < renderers.Count; r++)
 				{
+					// try getting the mesh filter
 					bool hasFilter = renderers[r].TryGetComponent(out MeshFilter meshFilter);
-					if (!hasFilter) continue;
-					if (meshFilter.mesh == null) continue;
+
+					// is skinned
+					bool isSkinnedRenderer = renderers[r].TryGetComponent(out SkinnedMeshRenderer skinnedModel);
+
+					if (!isSkinnedRenderer)  // if it's a normal model, check if it has a filter and a mesh
+					{
+						if (!hasFilter) continue;
+						if (meshFilter.mesh == null) continue;
+					}
 
 					// check if the mesh is legal
 					if (Utils.CheckLayerModel(renderers[r].transform)) continue;
 
 					// get the corners of the mesh
-					//meshFilter.mesh.RecalculateBounds();
-					Vector3[] corners = Utils.GetBoundCorners(meshFilter.mesh.bounds);
+					Bounds modelBounds = isSkinnedRenderer ? skinnedModel.localBounds : meshFilter.mesh.bounds;
+					Vector3[] corners = Utils.GetBoundCorners(modelBounds);
 
 					// create the transformation matrix
 					// part -> world -> vessel

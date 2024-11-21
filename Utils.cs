@@ -104,6 +104,7 @@ namespace Firefly
 
 		/// <summary>
 		/// Returns the angle of attack
+		/// Code courtesy FAR
 		/// </summary>
 		public static float GetAngleOfAttack(Vessel vessel)
 		{

@@ -53,9 +53,9 @@ namespace Firefly
 		/// </summary>
 		public void InitializeDefaultValues()
 		{
-			tgl_Hdr = ConfigManager.Instance.modSettings.hdrOverride;
-			tgl_UseColliders = ConfigManager.Instance.modSettings.useColliders;
-			tgl_DisableParticles = ConfigManager.Instance.modSettings.disableParticles;
+			tgl_Hdr = ConfigManager.Instance.modSettings.hdrOverride.Get();
+			tgl_UseColliders = ConfigManager.Instance.modSettings.useColliders.Get();
+			tgl_DisableParticles = ConfigManager.Instance.modSettings.disableParticles.Get();
 		}
 
 		public void OnDestroy()
@@ -131,8 +131,8 @@ namespace Firefly
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
 			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
-			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders = tgl_UseColliders;
-			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles = tgl_DisableParticles;
+			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings.useColliders.Set(tgl_UseColliders);
+			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings.disableParticles.Set(tgl_DisableParticles);
 			DrawConfigField("Speed method", ref tgl_SpeedMethod);
 			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;

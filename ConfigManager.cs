@@ -1,21 +1,54 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace Firefly
 {
+	public enum ValueType
+	{
+		Float,
+		Boolean
+	}
+
+	public struct ModSettingsField<T>
+	{
+		public string name;
+		public ValueType valueType;
+
+		public T value;
+
+		public ModSettingsField(string name, T value, ValueType valueType)
+		{
+			this.name = name;
+			this.valueType = valueType;
+			this.value = value;
+		}
+
+		public void Set(object value)
+		{
+			this.value = (T)value;
+		}
+
+		public T Get()
+		{
+			return this.value;
+		}
+	}
+
 	public struct ModSettings
 	{
-		public bool hdrOverride;
-		public bool useColliders;
-		public bool disableParticles;
+		public ModSettingsField<bool> hdrOverride;
+		public ModSettingsField<bool> useColliders;
+		public ModSettingsField<bool> disableParticles;
 
 		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles)
 		{
-			this.hdrOverride = hdrOverride;
-			this.useColliders = useColliders;
-			this.disableParticles = disableParticles;
+			this.hdrOverride = new ModSettingsField<bool>("hdr_override", hdrOverride, ValueType.Boolean);
+			this.useColliders = new ModSettingsField<bool>("use_colliders", useColliders, ValueType.Boolean);
+			this.disableParticles = new ModSettingsField<bool>("disable_particles", disableParticles, ValueType.Boolean);
 		}
 
 		public static ModSettings CreateDefault()
@@ -125,6 +158,9 @@ namespace Firefly
 			Logging.Log("ConfigManager Awake");
 		}
 
+		/// <summary>
+		/// Method which gets ran after MM finishes patching, to allow for config patches
+		/// </summary>
 		public static void ModuleManagerPostLoad()
 		{
 			Logging.Log("ConfigManager MMPostLoad");
@@ -180,9 +216,9 @@ namespace Firefly
 			ConfigNode settingsNode = settingsNodes[0];
 
 			bool isFormatted = true;
-			modSettings.hdrOverride = ReadConfigBoolean(settingsNode, "hdr_override", ref isFormatted);
-			modSettings.useColliders = ReadConfigBoolean(settingsNode, "use_colliders", ref isFormatted);
-			modSettings.disableParticles = ReadConfigBoolean(settingsNode, "disable_particles", ref isFormatted);
+			modSettings.hdrOverride.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
+			modSettings.useColliders.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
+			modSettings.disableParticles.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
 
 			if (!isFormatted)
 			{
@@ -436,6 +472,35 @@ namespace Firefly
 		ModifierOperation ReadConfigModifierOperation(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Enum.TryParse(node.GetValue(key), out ModifierOperation result);
+			isFormatted = isFormatted && success;
+
+			return result;
+		}
+
+		/// <summary>
+		/// Reads one boolean value from a node
+		/// </summary>
+		object ReadSettingsField<T>(ConfigNode node, ModSettingsField<T> field, ref bool isFormatted)
+		{
+			string value = node.GetValue(field.name);
+
+			bool success = false;
+			object result = default;
+			switch (field.valueType)
+			{
+				case ValueType.Boolean:
+					bool result_bool;
+					success = Utils.EvaluateBool(value, out result_bool);
+					result = result_bool;
+					break;
+				case ValueType.Float:
+					float result_float;
+					success = Utils.EvaluateFloat(value, out result_float);
+					result = result_float;
+					break;
+				default: break;
+			}
+			
 			isFormatted = isFormatted && success;
 
 			return result;

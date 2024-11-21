@@ -26,9 +26,12 @@ namespace Firefly
 		{
 			Instance = this;
 			
-			OverrideHDR(ConfigManager.Instance.modSettings.hdrOverride);
+			OverrideHDR(ConfigManager.Instance.modSettings.hdrOverride.Get());
 		}
 
+		/// <summary>
+		/// Adds a command buffer to the flight camera
+		/// </summary>
 		public void AddCommandBuffer(CameraEvent evt, CommandBuffer buf)
 		{
 			for (int i = 0; i < cameraBuffers.Count; i++)
@@ -36,11 +39,22 @@ namespace Firefly
 				if (cameraBuffers[i].Key == evt && cameraBuffers[i].Value == buf) return;
 			}
 
-			AddCommandBufferFlight(evt, buf);
+			// add the CB
+			Camera flightCam = FlightCamera.fetch.mainCamera;
+			if (flightCam == null) return;
 
+			CommandBuffer[] buffers = flightCam.GetCommandBuffers(evt);
+			if (buffers.Contains(buf)) return;  // detect duplicates
+
+			flightCam.AddCommandBuffer(evt, buf);
+
+			// add the CB to the global list
 			cameraBuffers.Add(new KeyValuePair<CameraEvent,CommandBuffer>(evt, buf));
 		}
 
+		/// <summary>
+		/// Removes a specified command buffer from the flight camera
+		/// </summary>
 		public void RemoveCommandBuffer(CameraEvent evt, CommandBuffer buf)
 		{
 			FlightCamera.fetch.mainCamera?.RemoveCommandBuffer(evt, buf);
@@ -55,17 +69,6 @@ namespace Firefly
 			}
 		}
 
-		void AddCommandBufferFlight(CameraEvent evt, CommandBuffer buf)
-		{
-			Camera flightCam = FlightCamera.fetch.mainCamera;
-			if (flightCam == null) return;
-
-			CommandBuffer[] buffers = flightCam.GetCommandBuffers(evt);
-			if (buffers.Contains(buf)) return;  // detect duplicates
-
-			flightCam.AddCommandBuffer(evt, buf);
-		}
-
 		/// <summary>
 		/// Sets the HDR option for the main and IVA cameras
 		/// </summary>
@@ -73,7 +76,7 @@ namespace Firefly
 		{
 			isHdr = hdr;
 
-			ConfigManager.Instance.modSettings.hdrOverride = hdr;
+			ConfigManager.Instance.modSettings.hdrOverride.Set(hdr);
 
 			if (Camera.main != null)
 			{

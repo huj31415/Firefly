@@ -185,7 +185,7 @@ namespace Firefly
 			PopulateCommandBuffer();
 
 			// create the particles
-			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();  // run the function only if they're enabled in settings
+			if (!ConfigManager.Instance.modSettings.disableParticles.Get()) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			// calculate the vessel bounds
 			bool correctBounds = CalculateVesselBounds(fxVessel, vessel, true);

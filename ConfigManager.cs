@@ -36,6 +36,11 @@ namespace Firefly
 		{
 			return this.value;
 		}
+
+		public void AddToNode(ConfigNode node)
+		{
+			node.AddValue(name, value);
+		}
 	}
 
 	public struct ModSettings
@@ -188,9 +193,9 @@ namespace Firefly
 			// create the node
 			ConfigNode node = new ConfigNode("ATMOFX_SETTINGS");
 
-			node.AddValue("hdr_override", modSettings.hdrOverride);
-			node.AddValue("use_colliders", modSettings.useColliders);
-			node.AddValue("disable_particles", modSettings.disableParticles);
+			modSettings.hdrOverride.AddToNode(node);
+			modSettings.useColliders.AddToNode(node);
+			modSettings.disableParticles.AddToNode(node);
 
 			// add to parent and save
 			parent.AddNode(node);

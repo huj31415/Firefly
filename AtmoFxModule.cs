@@ -680,6 +680,9 @@ namespace Firefly
 			}
 		}
 
+		/// <summary>
+		/// Debug drawings
+		/// </summary>
 		public void OnGUI()
 		{
 			if (!debugMode || !isLoaded) return;
@@ -703,6 +706,11 @@ namespace Firefly
 			DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.magenta);
 		}
 
+		/// <summary>
+		/// Does the necessary stuff during an SOI change, like enabling/disabling the effects and changing the color configs
+		/// Disables the effects on bodies without an atmosphere
+		/// Enables the effects if necessary
+		/// </summary>
 		public void OnVesselSOIChanged(CelestialBody body)
 		{
 			if (!body.atmosphere)

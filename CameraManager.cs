@@ -25,8 +25,8 @@ namespace Firefly
 		public void Awake()
 		{
 			Instance = this;
-			
-			OverrideHDR(ConfigManager.Instance.modSettings.hdrOverride.Get());
+
+			OverrideHDR((bool)ConfigManager.Instance.modSettings["hdr_override"]);
 		}
 
 		/// <summary>
@@ -76,7 +76,7 @@ namespace Firefly
 		{
 			isHdr = hdr;
 
-			ConfigManager.Instance.modSettings.hdrOverride.Set(hdr);
+			ConfigManager.Instance.modSettings["hdr_override"] = hdr;
 
 			if (Camera.main != null)
 			{

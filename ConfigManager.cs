@@ -1,64 +1,90 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace Firefly
 {
-	public enum ValueType
+	public class ModSettings
 	{
-		Float,
-		Boolean
-	}
-
-	public struct ModSettingsField<T>
-	{
-		public string name;
-		public ValueType valueType;
-
-		public T value;
-
-		public ModSettingsField(string name, T value, ValueType valueType)
+		public enum ValueType
 		{
-			this.name = name;
-			this.valueType = valueType;
-			this.value = value;
+			Boolean,
+			Float
 		}
 
-		public void Set(object value)
+		public class Field
 		{
-			this.value = (T)value;
+			public object value;
+			public ValueType valueType;
+
+			public Field(object value, ValueType valueType)
+			{
+				this.value = value;
+				this.valueType = valueType;
+			}
 		}
 
-		public T Get()
-		{
-			return this.value;
-		}
-
-		public void AddToNode(ConfigNode node)
-		{
-			node.AddValue(name, value);
-		}
-	}
-
-	public struct ModSettings
-	{
-		public ModSettingsField<bool> hdrOverride;
-		public ModSettingsField<bool> useColliders;
-		public ModSettingsField<bool> disableParticles;
+		public Dictionary<string, Field> fields;
 
 		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles)
 		{
-			this.hdrOverride = new ModSettingsField<bool>("hdr_override", hdrOverride, ValueType.Boolean);
-			this.useColliders = new ModSettingsField<bool>("use_colliders", useColliders, ValueType.Boolean);
-			this.disableParticles = new ModSettingsField<bool>("disable_particles", disableParticles, ValueType.Boolean);
+			this.fields = new Dictionary<string, Field>()
+			{
+				{ "hdr_override", new Field(hdrOverride, ValueType.Boolean) },
+				{ "use_colliders", new Field(useColliders, ValueType.Boolean) },
+				{ "disable_particles", new Field(disableParticles, ValueType.Boolean) }
+			};
 		}
 
 		public static ModSettings CreateDefault()
 		{
 			return new ModSettings(true, false, false);
+		}
+
+		/// <summary>
+		/// Saves every field to a ConfigNode
+		/// </summary>
+		public void SaveToNode(ref ConfigNode node)
+		{
+			for (int i = 0; i < fields.Count; i++)
+			{
+				KeyValuePair<string, Field> elem = fields.ElementAt(i);
+				node.AddValue(elem.Key, elem.Value.value);
+			}
+		}
+
+		/// <summary>
+		/// Gets the type of a field value
+		/// </summary>
+		public ValueType? GetFieldType(string key)
+		{
+			if (fields.ContainsKey(key))
+			{
+				return fields[key].valueType;
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Gets a field from the dict specified by a key
+		/// </summary>
+		public Field GetField(string key)
+		{
+			if (fields.ContainsKey(key))
+			{
+				return fields[key];
+			}
+
+			return null;
+		}
+		
+		// custom indexer
+		public object this[string i]
+		{
+			get => fields[i].value;
+			set => fields[i].value = value;
 		}
 	}
 
@@ -145,7 +171,7 @@ namespace Firefly
 	public class ConfigManager : MonoBehaviour
 	{
 		public static ConfigManager Instance { get; private set; }
-		public const string SettingsPath = "GameData/AtmosphericFx/Configs/ModSettings.cfg";
+		public const string SettingsPath = "GameData/Firefly/Configs/ModSettings.cfg";
 
 		public ModSettings modSettings = ModSettings.CreateDefault();
 
@@ -193,9 +219,7 @@ namespace Firefly
 			// create the node
 			ConfigNode node = new ConfigNode("ATMOFX_SETTINGS");
 
-			modSettings.hdrOverride.AddToNode(node);
-			modSettings.useColliders.AddToNode(node);
-			modSettings.disableParticles.AddToNode(node);
+			modSettings.SaveToNode(ref node);
 
 			// add to parent and save
 			parent.AddNode(node);
@@ -221,9 +245,9 @@ namespace Firefly
 			ConfigNode settingsNode = settingsNodes[0];
 
 			bool isFormatted = true;
-			modSettings.hdrOverride.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
-			modSettings.useColliders.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
-			modSettings.disableParticles.Set(ReadSettingsField(settingsNode, modSettings.hdrOverride, ref isFormatted));
+			modSettings["hdr_override"] = ReadSettingsField(settingsNode, "hdr_override", ref isFormatted);
+			modSettings["use_colliders"] = ReadSettingsField(settingsNode, "use_colliders", ref isFormatted);
+			modSettings["disable_particles"] = ReadSettingsField(settingsNode, "disable_particles", ref isFormatted);
 
 			if (!isFormatted)
 			{
@@ -231,7 +255,7 @@ namespace Firefly
 				modSettings = ModSettings.CreateDefault();
 			}
 
-			Logging.Log($"UseColliders:{modSettings.useColliders} DisableParticles:{modSettings.disableParticles}");
+			Logging.Log($"UseColliders:{modSettings["use_colliders"]} DisableParticles:{modSettings["disable_particles"]}");
 		}
 
 		/// <summary>
@@ -485,20 +509,21 @@ namespace Firefly
 		/// <summary>
 		/// Reads one boolean value from a node
 		/// </summary>
-		object ReadSettingsField<T>(ConfigNode node, ModSettingsField<T> field, ref bool isFormatted)
+		object ReadSettingsField(ConfigNode node, string field, ref bool isFormatted)
 		{
-			string value = node.GetValue(field.name);
+			string value = node.GetValue(field);
+			ModSettings.ValueType? type = modSettings.GetFieldType(field);
 
 			bool success = false;
 			object result = default;
-			switch (field.valueType)
+			switch (type)
 			{
-				case ValueType.Boolean:
+				case ModSettings.ValueType.Boolean:
 					bool result_bool;
 					success = Utils.EvaluateBool(value, out result_bool);
 					result = result_bool;
 					break;
-				case ValueType.Float:
+				case ModSettings.ValueType.Float:
 					float result_float;
 					success = Utils.EvaluateFloat(value, out result_float);
 					result = result_float;

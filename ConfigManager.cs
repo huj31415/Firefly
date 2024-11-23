@@ -98,14 +98,6 @@ namespace Firefly
 		}
 	}
 
-	public enum ModifierOperation
-	{
-		ADD = 0,
-		SUBTRACT = 1,
-		MULTIPLY = 2,
-		DIVIDE = 3
-	}
-
 	public struct BodyColors
 	{
 		public Color glow;
@@ -460,17 +452,6 @@ namespace Firefly
 		Color ReadConfigColorHDR(ConfigNode node, string key, ref bool isFormatted)
 		{
 			bool success = Utils.EvaluateColorHDR(node.GetValue(key), out Color result);
-			isFormatted = isFormatted && success;
-
-			return result;
-		}
-
-		/// <summary>
-		/// Reads the transition modifier mode enum
-		/// </summary>
-		ModifierOperation ReadConfigModifierOperation(ConfigNode node, string key, ref bool isFormatted)
-		{
-			bool success = Enum.TryParse(node.GetValue(key), out ModifierOperation result);
 			isFormatted = isFormatted && success;
 
 			return result;

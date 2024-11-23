@@ -641,12 +641,12 @@ namespace Firefly
 
 		public void LateUpdate()
 		{
-			float entrySpeed = GetAdjustedEntrySpeed();
-
 			// Certain things only need to happen if we had a fixed update
 			if (Time.fixedTime != lastFixedTime && isLoaded)
 			{
 				lastFixedTime = Time.fixedTime;
+
+				float entrySpeed = GetAdjustedEntrySpeed();
 
 				// update particles
 				if (fxVessel.hasParticles) UpdateParticleSystems();
@@ -674,7 +674,7 @@ namespace Firefly
 			}
 
 			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so
-			if (vessel.altitude > vessel.mainBody.atmosphereDepth && entrySpeed < 50f && isLoaded)
+			if (vessel.altitude > vessel.mainBody.atmosphereDepth && isLoaded)
 			{
 				RemoveVesselFx(false);
 			}

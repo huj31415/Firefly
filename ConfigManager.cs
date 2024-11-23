@@ -27,19 +27,27 @@ namespace Firefly
 
 		public Dictionary<string, Field> fields;
 
-		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles)
+		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles, bool disableSparks, bool disableDebris, bool disableSmoke)
 		{
 			this.fields = new Dictionary<string, Field>()
 			{
 				{ "hdr_override", new Field(hdrOverride, ValueType.Boolean) },
 				{ "use_colliders", new Field(useColliders, ValueType.Boolean) },
-				{ "disable_particles", new Field(disableParticles, ValueType.Boolean) }
+				{ "disable_particles", new Field(disableParticles, ValueType.Boolean) },
+				{ "disable_sparks", new Field(disableSparks, ValueType.Boolean) },
+				{ "disable_debris", new Field(disableDebris, ValueType.Boolean) },
+				{ "disable_smoke", new Field(disableSmoke, ValueType.Boolean) }
 			};
+		}
+
+		public ModSettings()
+		{
+			this.fields = new Dictionary<string, Field>();
 		}
 
 		public static ModSettings CreateDefault()
 		{
-			return new ModSettings(true, false, false);
+			return new ModSettings(true, false, false, false, false, false);
 		}
 
 		/// <summary>
@@ -51,6 +59,8 @@ namespace Firefly
 			{
 				KeyValuePair<string, Field> elem = fields.ElementAt(i);
 				node.AddValue(elem.Key, elem.Value.value);
+
+				Logging.Log($"ModSettings -  Saved {elem.Key} to node as {elem.Value.value}");
 			}
 		}
 
@@ -213,6 +223,8 @@ namespace Firefly
 		/// </summary>
 		public void SaveModSettings()
 		{
+			Logging.Log("Saving mod settings");
+
 			// create a parent node
 			ConfigNode parent = new ConfigNode("ATMOFX_SETTINGS");
 
@@ -244,10 +256,14 @@ namespace Firefly
 
 			ConfigNode settingsNode = settingsNodes[0];
 
+			// load the actual stuff from the ConfigNode
 			bool isFormatted = true;
 			modSettings["hdr_override"] = ReadSettingsField(settingsNode, "hdr_override", ref isFormatted);
 			modSettings["use_colliders"] = ReadSettingsField(settingsNode, "use_colliders", ref isFormatted);
 			modSettings["disable_particles"] = ReadSettingsField(settingsNode, "disable_particles", ref isFormatted);
+			modSettings["disable_sparks"] = ReadSettingsField(settingsNode, "disable_sparks", ref isFormatted);
+			modSettings["disable_debris"] = ReadSettingsField(settingsNode, "disable_debris", ref isFormatted);
+			modSettings["disable_smoke"] = ReadSettingsField(settingsNode, "disable_smoke", ref isFormatted);
 
 			if (!isFormatted)
 			{
@@ -513,6 +529,12 @@ namespace Firefly
 		{
 			string value = node.GetValue(field);
 			ModSettings.ValueType? type = modSettings.GetFieldType(field);
+
+			if (value == null)
+			{
+				isFormatted = false;
+				return null;
+			}
 
 			bool success = false;
 			object result = default;

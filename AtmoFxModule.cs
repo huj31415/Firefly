@@ -407,6 +407,15 @@ namespace Firefly
 			fxVessel.alternateChunkParticles.transform.rotation = Quaternion.identity;
 			fxVessel.smokeParticles.transform.rotation = Quaternion.identity;
 
+			// disable if needed
+			if ((bool)ConfigManager.Instance.modSettings["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
+			if ((bool)ConfigManager.Instance.modSettings["disable_debris"])
+			{
+				fxVessel.chunkParticles.gameObject.SetActive(false);
+				fxVessel.alternateChunkParticles.gameObject.SetActive(false);
+			}
+			if ((bool)ConfigManager.Instance.modSettings["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
+
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];

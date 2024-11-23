@@ -1,5 +1,7 @@
 ﻿using KSP.UI.Screens;
+using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace Firefly
 {
@@ -16,12 +18,9 @@ namespace Firefly
 		bool appToggle = false;
 
 		// override toggle values
-		public bool tgl_Hdr = false;
-		public bool tgl_UseColliders = false;
-		public bool tgl_DisableParticles = false;
+		public Dictionary<string, bool> configToggles = new Dictionary<string, bool>();
 
 		public bool tgl_SpeedMethod = false;
-
 		public bool tgl_EffectToggle = true;
 
 		// timer
@@ -53,9 +52,12 @@ namespace Firefly
 		/// </summary>
 		public void InitializeDefaultValues()
 		{
-			tgl_Hdr = (bool)ConfigManager.Instance.modSettings["hdr_override"];
-			tgl_UseColliders = (bool)ConfigManager.Instance.modSettings["use_colliders"];
-			tgl_DisableParticles = (bool)ConfigManager.Instance.modSettings["disable_particles"];
+			configToggles["hdr_override"] = (bool)ConfigManager.Instance.modSettings["hdr_override"];
+			configToggles["use_colliders"] = (bool)ConfigManager.Instance.modSettings["use_colliders"];
+			configToggles["disable_particles"] = (bool)ConfigManager.Instance.modSettings["disable_particles"];
+			configToggles["disable_sparks"] = (bool)ConfigManager.Instance.modSettings["disable_sparks"];
+			configToggles["disable_debris"] = (bool)ConfigManager.Instance.modSettings["disable_debris"];
+			configToggles["disable_smoke"] = (bool)ConfigManager.Instance.modSettings["disable_smoke"];
 		}
 
 		public void OnDestroy()
@@ -130,9 +132,27 @@ namespace Firefly
 				fxModule.ReloadVessel();
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
-			if (DrawConfigField("HDR Override", ref tgl_Hdr)) CameraManager.Instance.OverrideHDR(tgl_Hdr);
-			if (DrawConfigField("Use colliders", ref tgl_UseColliders)) ConfigManager.Instance.modSettings["use_colliders"] = tgl_UseColliders;
-			if (DrawConfigField("Disable particles", ref tgl_DisableParticles)) ConfigManager.Instance.modSettings["disable_particles"] = tgl_DisableParticles;
+
+			// draw config fields
+			for (int i = 0; i < ConfigManager.Instance.modSettings.fields.Count; i++)
+			{
+				KeyValuePair<string, ModSettings.Field> field = ConfigManager.Instance.modSettings.fields.ElementAt(i);
+				if (field.Value.valueType != ModSettings.ValueType.Boolean) continue;
+
+				if (DrawConfigField(field.Key, configToggles)) ApplyOverride(field.Key);
+			}
+
+			// button to apply all overrides
+			if (GUILayout.Button("Apply all overrides"))
+			{
+				for (int i = 0; i < configToggles.Keys.Count; i++)
+				{
+					ApplyOverride(configToggles.Keys.ElementAt(i));
+				}
+			}
+			
+			// other configs
+			GUILayout.Space(20);
 			DrawConfigField("Speed method", ref tgl_SpeedMethod);
 			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
@@ -203,6 +223,32 @@ namespace Firefly
 			GUILayout.EndHorizontal();
 
 			return result;
+		}
+
+		/// <summary>
+		/// Draws a config field with a toggle switch and a button which applies it
+		/// This variant uses a dict instead of a toggle reference
+		/// </summary>
+		/// <param name="label">Label to show</param>
+		/// <param name="tgl">The dict contatining the toggle values</param>
+		/// <returns>The apply button state</returns>
+		bool DrawConfigField(string label, Dictionary<string, bool> tgl)
+		{
+			GUILayout.BeginHorizontal();
+			tgl[label] = GUILayout.Toggle(tgl[label], label);
+			bool result = GUILayout.Button("Apply override");
+			GUILayout.EndHorizontal();
+
+			return result;
+		}
+		
+		void ApplyOverride(string key)
+		{
+			bool value = configToggles[key];
+			ConfigManager.Instance.modSettings[key] = value;
+
+			// special cases
+			if (key == "hdr_override") CameraManager.Instance.OverrideHDR(value);
 		}
 	}
 }

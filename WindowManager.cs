@@ -132,6 +132,19 @@ namespace Firefly
 				fxModule.ReloadVessel();
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
+			if (GUILayout.Button("Reload All Vessels") && canReload)
+			{
+				for (int i = 0; i < FlightGlobals.VesselsLoaded.Count; i++)
+				{
+					var mod = vessel.FindVesselModuleImplementing<AtmoFxModule>();
+
+					if (mod == null) continue;
+					if (!mod.isLoaded) continue;
+
+					mod.ReloadVessel();
+				}
+				reloadBtnTime = Time.realtimeSinceStartup;
+			}
 
 			// draw config fields
 			for (int i = 0; i < ConfigManager.Instance.modSettings.fields.Count; i++)
@@ -139,7 +152,7 @@ namespace Firefly
 				KeyValuePair<string, ModSettings.Field> field = ConfigManager.Instance.modSettings.fields.ElementAt(i);
 				if (field.Value.valueType != ModSettings.ValueType.Boolean) continue;
 
-				if (DrawConfigField(field.Key, configToggles)) ApplyOverride(field.Key);
+				DrawConfigField(field.Key, configToggles);
 			}
 
 			// button to apply all overrides
@@ -154,7 +167,7 @@ namespace Firefly
 			// other configs
 			GUILayout.Space(20);
 			DrawConfigField("Speed method", ref tgl_SpeedMethod);
-			if (GUILayout.Button("Save overrides")) ConfigManager.Instance.SaveModSettings();
+			if (GUILayout.Button("Save overrides to file")) ConfigManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 
 			// end
@@ -226,20 +239,15 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Draws a config field with a toggle switch and a button which applies it
+		/// Draws a config field with a toggle switch
 		/// This variant uses a dict instead of a toggle reference
 		/// </summary>
 		/// <param name="label">Label to show</param>
 		/// <param name="tgl">The dict contatining the toggle values</param>
 		/// <returns>The apply button state</returns>
-		bool DrawConfigField(string label, Dictionary<string, bool> tgl)
+		void DrawConfigField(string label, Dictionary<string, bool> tgl)
 		{
-			GUILayout.BeginHorizontal();
 			tgl[label] = GUILayout.Toggle(tgl[label], label);
-			bool result = GUILayout.Button("Apply override");
-			GUILayout.EndHorizontal();
-
-			return result;
 		}
 		
 		void ApplyOverride(string key)

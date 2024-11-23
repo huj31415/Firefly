@@ -57,7 +57,6 @@ namespace Firefly
 		public float vesselMaxSize;
 
 		public float lengthMultiplier = 1f;
-		public float speedMultiplier = 1f;
 
 		public Material material;
 	}
@@ -298,7 +297,7 @@ namespace Firefly
 				if (Utils.CheckLayerModel(model.transform)) continue;
 
 				// is skinned
-				bool isSkinnedRenderer = model.TryGetComponent(out SkinnedMeshRenderer skinnedModel);
+				bool isSkinnedRenderer = model.TryGetComponent(out SkinnedMeshRenderer _);
 
 				if (!isSkinnedRenderer)  // if it's a normal model, check if it has a filter and a mesh
 				{
@@ -943,7 +942,7 @@ namespace Firefly
 			}
 			*/
 
-			return GetEntrySpeed();
+			return GetEntrySpeed() * currentBody.strengthMultiplier;
 		}
 
 		/// <summary>

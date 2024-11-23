@@ -106,21 +106,6 @@ namespace Firefly
 		DIVIDE = 3
 	}
 
-	public struct TransitionModifier
-	{
-		// Smaller order values get ran first
-		public float order;
-
-		// The operation to use
-		public ModifierOperation operation;
-
-		// The value
-		public float value;
-
-		// Is the modifier dependent on the stock fx - if true then the value gets multiplied by the inverted stock fx scalar
-		public bool stockfxDependent;
-	}
-
 	public struct BodyColors
 	{
 		public Color glow;
@@ -141,10 +126,7 @@ namespace Firefly
 		public string bodyName = "Unknown";
 
 		// The entry speed gets multiplied by this before getting sent to the shader
-		public float intensity = 1f;
-
-		// This is used to modify the AeroFX scalar before getting sent off
-		public TransitionModifier[] transitionModifiers;
+		public float strengthMultiplier = 1f;
 
 		// The trail length gets multiplied by this
 		public float lengthMultiplier = 1f;
@@ -359,7 +341,7 @@ namespace Firefly
 			{
 				bodyName = bodyName,
 
-				intensity = ReadConfigValue(node, "intensity", ref isFormatted),
+				strengthMultiplier = ReadConfigValue(node, "strength_multiplier", ref isFormatted),
 				lengthMultiplier = ReadConfigValue(node, "length_multiplier", ref isFormatted),
 				opacityMultiplier = ReadConfigValue(node, "opacity_multiplier", ref isFormatted),
 				wrapFresnelModifier = ReadConfigValue(node, "wrap_fresnel_modifier", ref isFormatted),
@@ -367,9 +349,6 @@ namespace Firefly
 				streakProbability = ReadConfigValue(node, "streak_probability", ref isFormatted),
 				streakThreshold = ReadConfigValue(node, "streak_threshold", ref isFormatted)
 			};
-
-			// read the transition modifiers
-			isFormatted = isFormatted && ProcessTransitionModifiers(node, out body.transitionModifiers);
 
 			// read the colors
 			isFormatted = isFormatted && ProcessBodyColors(node, out body.colors);
@@ -387,7 +366,7 @@ namespace Firefly
 				// check if the body should be affected
 				if (planetPackConfigs[i].affectedBodies.Contains(bodyName))
 				{
-					body.intensity *= planetPackConfigs[i].speedMultiplier;
+					body.strengthMultiplier *= planetPackConfigs[i].speedMultiplier;
 				}
 			}
 
@@ -449,31 +428,6 @@ namespace Firefly
 			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", ref isFormatted);
 			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", ref isFormatted);
 			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", ref isFormatted);
-
-			return isFormatted;
-		}
-
-		/// <summary>
-		/// Processes the transition modifiers
-		/// </summary>
-		bool ProcessTransitionModifiers(ConfigNode rootNode, out TransitionModifier[] mods)
-		{
-			mods = null;
-
-			ConfigNode[] nodes = rootNode.GetNodes("TransitionModifier");
-			mods = new TransitionModifier[nodes.Length];
-
-			bool isFormatted = true;
-
-			for (int i = 0; i < nodes.Length; i++)
-			{
-				mods[i].order = ReadConfigValue(nodes[i], "order", ref isFormatted);
-				mods[i].operation = ReadConfigModifierOperation(nodes[i], "operation", ref isFormatted);
-				mods[i].value = ReadConfigValue(nodes[i], "value", ref isFormatted);
-				mods[i].stockfxDependent = ReadConfigBoolean(nodes[i], "stockfx_dependent", ref isFormatted);
-			}
-
-			mods = mods.OrderBy(m => m.order).ToArray();
 
 			return isFormatted;
 		}

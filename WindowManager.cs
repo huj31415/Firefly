@@ -19,8 +19,6 @@ namespace Firefly
 
 		// override toggle values
 		public Dictionary<string, bool> configToggles = new Dictionary<string, bool>();
-
-		public bool tgl_SpeedMethod = false;
 		public bool tgl_EffectToggle = true;
 
 		// timer
@@ -166,7 +164,6 @@ namespace Firefly
 			
 			// other configs
 			GUILayout.Space(20);
-			DrawConfigField("Speed method", ref tgl_SpeedMethod);
 			if (GUILayout.Button("Save overrides to file")) ConfigManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 

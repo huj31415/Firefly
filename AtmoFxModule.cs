@@ -865,51 +865,47 @@ namespace Firefly
 		/// </summary>
 		float GetEntrySpeed()
 		{
-			float spd;
+			/*
+			// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
+			double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
+			double vesselMach = vessel.mach;
 
-			if (WindowManager.Instance.tgl_SpeedMethod)
+			// get the stock aeroFX scalar
+			float aeroFxScalar = AeroFX.FxScalar + 0.26f;  // adding 0.26 and body scalar to make the effect start earlier
+
+			// apply the body config modifiers
+			for (int i = 0; i < currentBody.transitionModifiers.Length; i++)
 			{
-				// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
-				double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
-				double vesselMach = vessel.mach;
+				TransitionModifier mod = currentBody.transitionModifiers[i];
 
-				// get the stock aeroFX scalar
-				float aeroFxScalar = AeroFX.FxScalar + 0.26f;  // adding 0.26 and body scalar to make the effect start earlier
+				float value = mod.value * (mod.stockfxDependent ? (1f - AeroFX.FxScalar) : 1f);
 
-				// apply the body config modifiers
-				for (int i = 0; i < currentBody.transitionModifiers.Length; i++)
+				switch (mod.operation)
 				{
-					TransitionModifier mod = currentBody.transitionModifiers[i];
-
-					float value = mod.value * (mod.stockfxDependent ? (1f - AeroFX.FxScalar) : 1f);
-
-					switch (mod.operation)
-					{
-						case ModifierOperation.ADD:
-							aeroFxScalar += value;
-							break;
-						case ModifierOperation.SUBTRACT:
-							aeroFxScalar -= value;
-							break;
-						case ModifierOperation.MULTIPLY:
-							aeroFxScalar *= Mathf.Max(value, mod.stockfxDependent ? 1f : 0f);  // if the effect is stockfx dependent then clamp it to not go below 1
-							break;
-						case ModifierOperation.DIVIDE:
-							aeroFxScalar /= value;
-							break;
-						default:
-							break;
-					}
+					case ModifierOperation.ADD:
+						aeroFxScalar += value;
+						break;
+					case ModifierOperation.SUBTRACT:
+						aeroFxScalar -= value;
+						break;
+					case ModifierOperation.MULTIPLY:
+						aeroFxScalar *= Mathf.Max(value, mod.stockfxDependent ? 1f : 0f);  // if the effect is stockfx dependent then clamp it to not go below 1
+						break;
+					case ModifierOperation.DIVIDE:
+						aeroFxScalar /= value;
+						break;
+					default:
+						break;
 				}
-
-				// convert to m/s
-				spd = (float)(mach * vesselMach);
-				spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
-				spd *= aeroFxScalar;
-			} else
-			{
-				spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 			}
+
+			// convert to m/s
+			spd = (float)(mach * vesselMach);
+			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
+			spd *= aeroFxScalar;
+			*/
+
+			float spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
 			float delta = Mathf.Abs(spd - lastSpeed) / 2800f;
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * (1f + delta * 2f));
@@ -940,10 +936,12 @@ namespace Firefly
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
+			/*
 			if (WindowManager.Instance.tgl_SpeedMethod)
 			{
 				return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
 			}
+			*/
 
 			return GetEntrySpeed();
 		}

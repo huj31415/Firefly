@@ -352,7 +352,7 @@ namespace Firefly
 				for (int i = 0; i < nodes.Length; i++)
 				{
 					string partId = nodes[i].GetValue("name");
-					bool success = ProcessPartConfigNode(nodes[i], partId, out BodyColors cfg);
+					bool success = ProcessPartConfigNode(nodes[i], out BodyColors cfg);
 
 					Logging.Log($"Processed part override config {partId}");
 
@@ -401,7 +401,7 @@ namespace Firefly
 			};
 
 			// read the colors
-			isFormatted = isFormatted && ProcessBodyColors(node, out body.colors);
+			isFormatted = isFormatted && ProcessBodyColors(node, false, out body.colors);
 
 			// is the config formatted correctly?
 			if (!isFormatted)
@@ -462,9 +462,9 @@ namespace Firefly
 		/// <summary>
 		/// Processes a single part config node
 		/// </summary>
-		bool ProcessPartConfigNode(ConfigNode node, string partId, out BodyColors cfg)
+		bool ProcessPartConfigNode(ConfigNode node, out BodyColors cfg)
 		{
-			bool isFormatted = ProcessBodyColors(node, out cfg);
+			bool isFormatted = ProcessBodyColors(node, true, out cfg);
 
 			return isFormatted;
 		}
@@ -472,7 +472,7 @@ namespace Firefly
 		/// <summary>
 		/// Processes the colors node of a body
 		/// </summary>
-		bool ProcessBodyColors(ConfigNode rootNode, out BodyColors body)
+		bool ProcessBodyColors(ConfigNode rootNode, bool partConfig, out BodyColors body)
 		{
 			body = new BodyColors();
 
@@ -480,14 +480,14 @@ namespace Firefly
 			bool isFormatted = rootNode.TryGetNode("Color", ref colorNode);
 			if (!isFormatted) return false;
 
-			body.glow = ReadConfigColorHDR(colorNode, "glow", ref isFormatted);
-			body.glowHot = ReadConfigColorHDR(colorNode, "glow_hot", ref isFormatted);
-			body.trailPrimary = ReadConfigColorHDR(colorNode, "trail_primary", ref isFormatted);
-			body.trailSecondary = ReadConfigColorHDR(colorNode, "trail_secondary", ref isFormatted);
-			body.trailTertiary = ReadConfigColorHDR(colorNode, "trail_tertiary", ref isFormatted);
-			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", ref isFormatted);
-			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", ref isFormatted);
-			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", ref isFormatted);
+			body.glow = ReadConfigColorHDR(colorNode, "glow", partConfig, ref isFormatted);
+			body.glowHot = ReadConfigColorHDR(colorNode, "glow_hot", partConfig, ref isFormatted);
+			body.trailPrimary = ReadConfigColorHDR(colorNode, "trail_primary", partConfig, ref isFormatted);
+			body.trailSecondary = ReadConfigColorHDR(colorNode, "trail_secondary", partConfig, ref isFormatted);
+			body.trailTertiary = ReadConfigColorHDR(colorNode, "trail_tertiary", partConfig, ref isFormatted);
+			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", partConfig, ref isFormatted);
+			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", partConfig, ref isFormatted);
+			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", partConfig, ref isFormatted);
 
 			return isFormatted;
 		}
@@ -517,12 +517,17 @@ namespace Firefly
 		/// <summary>
 		/// Reads one HDR color value from a node
 		/// </summary>
-		Color? ReadConfigColorHDR(ConfigNode node, string key, ref bool isFormatted)
+		Color? ReadConfigColorHDR(ConfigNode node, string key, bool partConfig, ref bool isFormatted)
 		{
 			string value = node.GetValue(key);
 
 			// check if null
-			if (value.ToLower() == "null") return null;
+			if (value.ToLower() == "null")
+			{
+				isFormatted = isFormatted && partConfig;
+
+				return null;
+			}
 
 			bool success = Utils.EvaluateColorHDR(value, out Color result);
 			isFormatted = isFormatted && success;

@@ -261,6 +261,7 @@ namespace Firefly
 					if (overrideColor.trailPrimary.HasValue) colors.trailPrimary = overrideColor.trailPrimary;
 					if (overrideColor.trailSecondary.HasValue) colors.trailSecondary = overrideColor.trailSecondary;
 					if (overrideColor.trailTertiary.HasValue) colors.trailTertiary = overrideColor.trailTertiary;
+					if (overrideColor.trailStreak.HasValue) colors.trailStreak = overrideColor.trailStreak;
 
 					if (overrideColor.wrapLayer.HasValue) colors.wrapLayer = overrideColor.wrapLayer;
 					if (overrideColor.wrapStreak.HasValue) colors.wrapStreak = overrideColor.wrapStreak;
@@ -275,6 +276,7 @@ namespace Firefly
 				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", colors.trailPrimary.Value);
 				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", colors.trailSecondary.Value);
 				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", colors.trailTertiary.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_StreakColor", colors.trailStreak.Value);
 
 				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", colors.wrapLayer.Value);
 				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", colors.wrapStreak.Value);

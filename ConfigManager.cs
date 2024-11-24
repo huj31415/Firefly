@@ -106,6 +106,7 @@ namespace Firefly
 		public Color? trailPrimary;
 		public Color? trailSecondary;
 		public Color? trailTertiary;
+		public Color? trailStreak;
 
 		public Color? wrapLayer;
 		public Color? wrapStreak;
@@ -128,6 +129,7 @@ namespace Firefly
 			this.trailPrimary = org.trailPrimary;
 			this.trailSecondary = org.trailSecondary;
 			this.trailTertiary = org.trailTertiary;
+			this.trailStreak = org.trailStreak;
 
 			this.wrapLayer = org.wrapLayer;
 			this.wrapStreak = org.wrapStreak;
@@ -485,6 +487,7 @@ namespace Firefly
 			body.trailPrimary = ReadConfigColorHDR(colorNode, "trail_primary", partConfig, ref isFormatted);
 			body.trailSecondary = ReadConfigColorHDR(colorNode, "trail_secondary", partConfig, ref isFormatted);
 			body.trailTertiary = ReadConfigColorHDR(colorNode, "trail_tertiary", partConfig, ref isFormatted);
+			body.trailStreak = ReadConfigColorHDR(colorNode, "trail_streak", partConfig, ref isFormatted);
 			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", partConfig, ref isFormatted);
 			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", partConfig, ref isFormatted);
 			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", partConfig, ref isFormatted);

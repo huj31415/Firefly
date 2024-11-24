@@ -111,6 +111,26 @@ namespace Firefly
 		public Color? wrapStreak;
 
 		public Color? shockwave;
+
+		public BodyColors()
+		{
+
+		}
+
+		public BodyColors(BodyColors org)
+		{
+			this.glow = org.glow;
+			this.glowHot = org.glowHot;
+
+			this.trailPrimary = org.trailPrimary;
+			this.trailSecondary = org.trailSecondary;
+			this.trailTertiary = org.trailTertiary;
+
+			this.wrapLayer = org.wrapLayer;
+			this.wrapStreak = org.wrapStreak;
+
+			this.shockwave = org.shockwave;
+		}
 	}
 
 	public class BodyConfig

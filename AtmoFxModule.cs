@@ -246,46 +246,74 @@ namespace Firefly
 				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i*2 + 1]);
 
 				// part overrides
-				BodyColors colors = new BodyColors();
+				BodyColors colors = new BodyColors(currentBody.colors);
 				if (ConfigManager.Instance.partConfigs.ContainsKey(envelope.partName))
 				{
 					Logging.Log("Envelope has a part override config");
 					BodyColors overrideColor = ConfigManager.Instance.partConfigs[envelope.partName];
 
+					/*
+					Logging.Log($"{overrideColor.glow.HasValue}");
+					Logging.Log($"{overrideColor.glow.Value}");
+					Logging.Log($"{overrideColor.glowHot.HasValue}");
+					Logging.Log($"{overrideColor.glowHot.Value}");
+					Logging.Log($"{overrideColor.trailPrimary.HasValue}");
+					Logging.Log($"{overrideColor.trailPrimary.Value}");
+					Logging.Log($"{overrideColor.trailSecondary.HasValue}");
+					Logging.Log($"{overrideColor.trailSecondary.Value}");
+					Logging.Log($"{overrideColor.trailTertiary.HasValue}");
+					Logging.Log($"{overrideColor.trailTertiary.Value}");
+					Logging.Log($"{overrideColor.wrapLayer.HasValue}");
+					Logging.Log($"{overrideColor.wrapLayer.Value}");
+					Logging.Log($"{overrideColor.wrapStreak.HasValue}");
+					Logging.Log($"{overrideColor.wrapStreak.Value}");
+					Logging.Log($"{overrideColor.shockwave.HasValue}");
+					Logging.Log($"{overrideColor.shockwave.Value}");
+
+					Logging.Log($"{currentBody.colors.glow.HasValue}");
+					Logging.Log($"{currentBody.colors.glow.Value}");
+					Logging.Log($"{currentBody.colors.glowHot.HasValue}");
+					Logging.Log($"{currentBody.colors.glowHot.Value}");
+					Logging.Log($"{currentBody.colors.trailPrimary.HasValue}");
+					Logging.Log($"{currentBody.colors.trailPrimary.Value}");
+					Logging.Log($"{currentBody.colors.trailSecondary.HasValue}");
+					Logging.Log($"{currentBody.colors.trailSecondary.Value}");
+					Logging.Log($"{currentBody.colors.trailTertiary.HasValue}");
+					Logging.Log($"{currentBody.colors.trailTertiary.Value}");
+					Logging.Log($"{currentBody.colors.wrapLayer.HasValue}");
+					Logging.Log($"{currentBody.colors.wrapLayer.Value}");
+					Logging.Log($"{currentBody.colors.wrapStreak.HasValue}");
+					Logging.Log($"{currentBody.colors.wrapStreak.Value}");
+					Logging.Log($"{currentBody.colors.shockwave.HasValue}");
+					Logging.Log($"{currentBody.colors.shockwave.Value}");
+					*/
+
 					// TODO: This is a mess, please clean up
 					// TODO: Please don't ignore this todo
-					if (overrideColor.glow != null) colors.glow = overrideColor.glow;
-					else colors.glow = currentBody.colors.glow;
-					if (overrideColor.glowHot != null) colors.glowHot = overrideColor.glowHot;
-					else colors.glowHot = currentBody.colors.glowHot;
+					if (overrideColor.glow.HasValue) colors.glow = overrideColor.glow;
+					if (overrideColor.glowHot.HasValue) colors.glowHot = overrideColor.glowHot;
 
-					if (overrideColor.trailPrimary != null) colors.trailPrimary = overrideColor.trailPrimary;
-					else colors.trailPrimary = currentBody.colors.trailPrimary;
-					if (overrideColor.trailSecondary != null) colors.trailSecondary = overrideColor.trailSecondary;
-					else colors.trailSecondary  = currentBody.colors.trailSecondary;
-					if (overrideColor.trailTertiary != null) colors.trailTertiary = overrideColor.trailTertiary;
-					else colors.trailTertiary = currentBody.colors.trailTertiary;
+					if (overrideColor.trailPrimary.HasValue) colors.trailPrimary = overrideColor.trailPrimary;
+					if (overrideColor.trailSecondary.HasValue) colors.trailSecondary = overrideColor.trailSecondary;
+					if (overrideColor.trailTertiary.HasValue) colors.trailTertiary = overrideColor.trailTertiary;
 
-					if (overrideColor.wrapLayer != null) colors.wrapLayer = overrideColor.wrapLayer;
-					else colors.wrapLayer = currentBody.colors.wrapLayer;
-					if (overrideColor.wrapStreak != null) colors.wrapStreak = overrideColor.wrapStreak;
-					else colors.wrapStreak = currentBody.colors.wrapStreak;
+					if (overrideColor.wrapLayer.HasValue) colors.wrapLayer = overrideColor.wrapLayer;
+					if (overrideColor.wrapStreak.HasValue) colors.wrapStreak = overrideColor.wrapStreak;
 
-					if (overrideColor.shockwave != null) colors.shockwave = overrideColor.shockwave;
-					else colors.shockwave = currentBody.colors.shockwave;
+					if (overrideColor.shockwave.HasValue) colors.shockwave = overrideColor.shockwave;
 				}
 
-				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", (Color)colors.glow);
-				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", (Color)colors.glowHot);
+				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors.glow.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors.glowHot.Value);
 
-				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", (Color)colors.trailPrimary);
-				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", (Color)colors.trailSecondary);
-				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", (Color)colors.trailTertiary);
+				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", colors.trailPrimary.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", colors.trailSecondary.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", colors.trailTertiary.Value);
 
-				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", (Color)colors.wrapLayer);
-				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", (Color)colors.wrapStreak);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", colors.wrapLayer.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", colors.wrapStreak.Value);
 
-				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", (Color)colors.shockwave);
+				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", colors.shockwave.Value);
 
 				// draw the mesh
 				fxVessel.commandBuffer.DrawRenderer(envelope.renderer, fxVessel.material);

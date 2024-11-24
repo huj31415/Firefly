@@ -73,17 +73,12 @@ namespace Firefly
 			globalShader = sh;
 
 			// load material
-			bool hasMaterial = TryGetMaterial("Reentry", out Material loadedMat);
+			bool hasMaterial = TryGetMaterial("Reentry", out Material mt);
 			if (!hasMaterial)
 			{
 				Logging.Log("Failed to load reentry material, halting startup");
 				return;
 			}
-			Material mt = new Material(globalShader);
-			mt.SetTexture("_NoiseTex", loadedMat.GetTexture("_NoiseTex"));
-			mt.SetFloat("_BlueMultiplier", 0f);
-			mt.SetFloat("_TrailAlphaMultiplier", 1f);
-			mt.SetFloat("_HeatMultipler", 1f);
 			globalMaterial = mt;
 
 			// initialize material

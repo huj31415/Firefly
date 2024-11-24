@@ -98,19 +98,19 @@ namespace Firefly
 		}
 	}
 
-	public struct BodyColors
+	public class BodyColors
 	{
-		public Color glow;
-		public Color glowHot;
+		public Color? glow;
+		public Color? glowHot;
 
-		public Color trailPrimary;
-		public Color trailSecondary;
-		public Color trailTertiary;
+		public Color? trailPrimary;
+		public Color? trailSecondary;
+		public Color? trailTertiary;
 
-		public Color wrapLayer;
-		public Color wrapStreak;
+		public Color? wrapLayer;
+		public Color? wrapStreak;
 
-		public Color shockwave;
+		public Color? shockwave;
 	}
 
 	public class BodyConfig
@@ -162,6 +162,8 @@ namespace Firefly
 		public Dictionary<string, BodyConfig> bodyConfigs = new Dictionary<string, BodyConfig>();
 		public List<PlanetPackConfig> planetPackConfigs = new List<PlanetPackConfig>();
 
+		public Dictionary<string, BodyColors> partConfigs = new Dictionary<string, BodyColors>();
+
 		public BodyConfig defaultConfig;
 
 		public string homeWorld;
@@ -190,6 +192,7 @@ namespace Firefly
 		{
 			LoadModSettings();
 			LoadPlanetConfigs();
+			LoadPartConfigs();
 		}
 		
 		/// <summary>
@@ -310,6 +313,38 @@ namespace Firefly
 		}
 
 		/// <summary>
+		/// Loads the configs for individual parts
+		/// </summary>
+		void LoadPartConfigs()
+		{
+			// clear the dict
+			partConfigs.Clear();
+
+			// get the planet packs
+			ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_PART");
+
+			// check if there's actually anything to load
+			if (nodes.Length > 0)
+			{
+				for (int i = 0; i < nodes.Length; i++)
+				{
+					string partId = nodes[i].GetValue("name");
+					bool success = ProcessPartConfigNode(nodes[i], partId, out BodyColors cfg);
+
+					Logging.Log($"Processed part override config {partId}");
+
+					if (!success)
+					{
+						Logging.Log($"Couldn't process override config for part {partId}");
+						continue;
+					}
+
+					partConfigs.Add(partId, cfg);
+				}
+			}
+		}
+
+		/// <summary>
 		/// Processes single node
 		/// </summary>
 		bool ProcessSingleNode(ConfigNode node, out BodyConfig body)
@@ -401,6 +436,15 @@ namespace Firefly
 			return true;
 		}
 
+		bool ProcessPartConfigNode(ConfigNode node, string partId, out BodyColors cfg)
+		{
+			cfg = new BodyColors();
+
+			bool isFormatted = ProcessBodyColors(node, out cfg);
+
+			return isFormatted;
+		}
+
 		/// <summary>
 		/// Processes the colors node of a body
 		/// </summary>
@@ -449,9 +493,13 @@ namespace Firefly
 		/// <summary>
 		/// Reads one HDR color value from a node
 		/// </summary>
-		Color ReadConfigColorHDR(ConfigNode node, string key, ref bool isFormatted)
+		Color? ReadConfigColorHDR(ConfigNode node, string key, ref bool isFormatted)
 		{
-			bool success = Utils.EvaluateColorHDR(node.GetValue(key), out Color result);
+			string value = node.GetValue(key);
+
+			if (value.ToLower() == "null") return null;
+
+			bool success = Utils.EvaluateColorHDR(value, out Color result);
 			isFormatted = isFormatted && success;
 
 			return result;

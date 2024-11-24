@@ -2,6 +2,7 @@ using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -23,11 +24,26 @@ namespace Firefly
 	}
 
 	/// <summary>
+	/// Stores the data of an fx envelope renderer
+	/// </summary>
+	public struct FxEnvelopeModel
+	{
+		public string partName;
+		public Renderer renderer;
+
+		public FxEnvelopeModel(string partName, Renderer renderer)
+		{
+			this.partName = partName;
+			this.renderer = renderer;
+		}
+	}
+
+	/// <summary>
 	/// Stores the data and instances of the effects
 	/// </summary>
 	public class AtmoFxVessel
 	{
-		public List<Renderer> fxEnvelope = new List<Renderer>();
+		public List<FxEnvelopeModel> fxEnvelope = new List<FxEnvelopeModel>();
 		public List<Vector3> fxEnvelopeProperties = new List<Vector3>();
 		public List<Renderer> fxEnvelopeGenerated = new List<Renderer>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
@@ -170,6 +186,19 @@ namespace Firefly
 				return;
 			}
 
+			// calculate the vessel bounds
+			bool correctBounds = CalculateVesselBounds(fxVessel, vessel, true);
+			if (!correctBounds)
+			{
+				Logging.Log("Recalculating invalid vessel bounds");
+				CalculateVesselBounds(fxVessel, vessel, false);
+			}
+			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
+			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
+
+			// set the current body
+			UpdateCurrentBody(vessel.mainBody, true);
+
 			// create the command buffer
 			InitializeCommandBuffer();
 
@@ -185,19 +214,6 @@ namespace Firefly
 
 			// create the particles
 			if (!(bool)ConfigManager.Instance.modSettings["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
-
-			// calculate the vessel bounds
-			bool correctBounds = CalculateVesselBounds(fxVessel, vessel, true);
-			if (!correctBounds)
-			{
-				Logging.Log("Recalculating invalid vessel bounds");
-				CalculateVesselBounds(fxVessel, vessel, false);
-			}
-			fxVessel.airstreamCamera.orthographicSize = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude, 0.3f, 2000f);  // clamp the ortho camera size
-			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
-
-			// set the current body
-			UpdateCurrentBody(vessel.mainBody);
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
@@ -223,9 +239,56 @@ namespace Firefly
 
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
+				FxEnvelopeModel envelope = fxVessel.fxEnvelope[i];
+
+				// set model values
 				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", fxVessel.fxEnvelopeProperties[i*2]);
 				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i*2 + 1]);
-				fxVessel.commandBuffer.DrawRenderer(fxVessel.fxEnvelope[i], fxVessel.material);
+
+				// part overrides
+				BodyColors colors = new BodyColors();
+				if (ConfigManager.Instance.partConfigs.ContainsKey(envelope.partName))
+				{
+					Logging.Log("Envelope has a part override config");
+					BodyColors overrideColor = ConfigManager.Instance.partConfigs[envelope.partName];
+
+					// TODO: This is a mess, please clean up
+					// TODO: Please don't ignore this todo
+					if (overrideColor.glow != null) colors.glow = overrideColor.glow;
+					else colors.glow = currentBody.colors.glow;
+					if (overrideColor.glowHot != null) colors.glowHot = overrideColor.glowHot;
+					else colors.glowHot = currentBody.colors.glowHot;
+
+					if (overrideColor.trailPrimary != null) colors.trailPrimary = overrideColor.trailPrimary;
+					else colors.trailPrimary = currentBody.colors.trailPrimary;
+					if (overrideColor.trailSecondary != null) colors.trailSecondary = overrideColor.trailSecondary;
+					else colors.trailSecondary  = currentBody.colors.trailSecondary;
+					if (overrideColor.trailTertiary != null) colors.trailTertiary = overrideColor.trailTertiary;
+					else colors.trailTertiary = currentBody.colors.trailTertiary;
+
+					if (overrideColor.wrapLayer != null) colors.wrapLayer = overrideColor.wrapLayer;
+					else colors.wrapLayer = currentBody.colors.wrapLayer;
+					if (overrideColor.wrapStreak != null) colors.wrapStreak = overrideColor.wrapStreak;
+					else colors.wrapStreak = currentBody.colors.wrapStreak;
+
+					if (overrideColor.shockwave != null) colors.shockwave = overrideColor.shockwave;
+					else colors.shockwave = currentBody.colors.shockwave;
+				}
+
+				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", (Color)colors.glow);
+				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", (Color)colors.glowHot);
+
+				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", (Color)colors.trailPrimary);
+				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", (Color)colors.trailSecondary);
+				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", (Color)colors.trailTertiary);
+
+				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", (Color)colors.wrapLayer);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", (Color)colors.wrapStreak);
+
+				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", (Color)colors.shockwave);
+
+				// draw the mesh
+				fxVessel.commandBuffer.DrawRenderer(envelope.renderer, fxVessel.material);
 			}
 		}
 
@@ -269,7 +332,7 @@ namespace Firefly
 
 					parentRenderer.enabled = false;
 
-					fxVessel.fxEnvelope.Add(parentRenderer);
+					fxVessel.fxEnvelope.Add(new FxEnvelopeModel(part.partInfo.name, parentRenderer));
 					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_ModelScale
 					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_EnvelopeScaleFactor
 
@@ -312,7 +375,7 @@ namespace Firefly
 
 				if (!Utils.IsPartBoundCompatible(part)) continue;
 
-				fxVessel.fxEnvelope.Add(model);
+				fxVessel.fxEnvelope.Add(new FxEnvelopeModel(part.name, model));
 				fxVessel.fxEnvelopeProperties.Add(model.transform.lossyScale);  //_ModelScale
 				fxVessel.fxEnvelopeProperties.Add(new Vector3(1.05f, 1.07f, 1.05f));  //_EnvelopeScaleFactor
 
@@ -612,11 +675,11 @@ namespace Firefly
 
 		void Debug_ToggleEnvelopes()
 		{
-			bool state = fxVessel.fxEnvelope[0].gameObject.activeSelf;
+			bool state = fxVessel.fxEnvelope[0].renderer.gameObject.activeSelf;
 
 			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
 			{
-				fxVessel.fxEnvelope[i].gameObject.SetActive(!state);
+				fxVessel.fxEnvelope[i].renderer.gameObject.SetActive(!state);
 			}
 		}
 
@@ -733,21 +796,31 @@ namespace Firefly
 				return;
 			}
 
-			UpdateCurrentBody(body);
+			UpdateCurrentBody(body, false);
 		}
 
 		/// <summary>
 		/// Updates the current body, and updates the properties
 		/// </summary>
-		private void UpdateCurrentBody(CelestialBody body)
+		private void UpdateCurrentBody(CelestialBody body, bool atLoad)
 		{
 			if (fxVessel != null)
 			{
+				Logging.Log($"Updating current body for {vessel.name}");
+
 				ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
 
 				currentBody = cfg;
 				fxVessel.lengthMultiplier = GetLengthMultiplier();
 				UpdateStaticMaterialProperties();
+				
+				if (!atLoad)
+				{
+					// reset the commandbuffer
+					DestroyCommandBuffer();
+					InitializeCommandBuffer();
+					PopulateCommandBuffer();
+				}
 			}
 		}
 
@@ -762,18 +835,6 @@ namespace Firefly
 
 			fxVessel.material.SetFloat("_StreakProbability", currentBody.streakProbability);
 			fxVessel.material.SetFloat("_StreakThreshold", currentBody.streakThreshold);
-
-			fxVessel.material.SetColor("_GlowColor", currentBody.colors.glow);
-			fxVessel.material.SetColor("_HotGlowColor", currentBody.colors.glowHot);
-
-			fxVessel.material.SetColor("_PrimaryColor", currentBody.colors.trailPrimary);
-			fxVessel.material.SetColor("_SecondaryColor", currentBody.colors.trailSecondary);
-			fxVessel.material.SetColor("_TertiaryColor", currentBody.colors.trailTertiary);
-
-			fxVessel.material.SetColor("_LayerColor", currentBody.colors.wrapLayer);
-			fxVessel.material.SetColor("_LayerStreakColor", currentBody.colors.wrapStreak);
-
-			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}
 
 		/// <summary>

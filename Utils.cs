@@ -60,6 +60,14 @@ namespace Firefly
 		}
 
 		/// <summary>
+		/// Returns the cfg name from a part.partInfo.name field
+		/// </summary>
+		public static string GetPartCfgName(string name)
+		{
+			return name.Replace('.', '_');
+		}
+
+		/// <summary>
 		/// Is part legible for bound calculations?
 		/// </summary>
 		public static bool IsPartBoundCompatible(Part part)

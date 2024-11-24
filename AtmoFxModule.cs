@@ -328,7 +328,7 @@ namespace Firefly
 
 					parentRenderer.enabled = false;
 
-					fxVessel.fxEnvelope.Add(new FxEnvelopeModel(part.partInfo.name, parentRenderer));
+					fxVessel.fxEnvelope.Add(new FxEnvelopeModel(Utils.GetPartCfgName(part.partInfo.name), parentRenderer));
 					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_ModelScale
 					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_EnvelopeScaleFactor
 
@@ -371,7 +371,7 @@ namespace Firefly
 
 				if (!Utils.IsPartBoundCompatible(part)) continue;
 
-				fxVessel.fxEnvelope.Add(new FxEnvelopeModel(part.name, model));
+				fxVessel.fxEnvelope.Add(new FxEnvelopeModel(Utils.GetPartCfgName(part.partInfo.name), model));
 				fxVessel.fxEnvelopeProperties.Add(model.transform.lossyScale);  //_ModelScale
 				fxVessel.fxEnvelopeProperties.Add(new Vector3(1.05f, 1.07f, 1.05f));  //_EnvelopeScaleFactor
 

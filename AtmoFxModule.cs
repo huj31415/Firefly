@@ -246,50 +246,15 @@ namespace Firefly
 				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i*2 + 1]);
 
 				// part overrides
-				BodyColors colors = new BodyColors(currentBody.colors);
+				BodyColors colors = new BodyColors(currentBody.colors);  // create the original colors
 				if (ConfigManager.Instance.partConfigs.ContainsKey(envelope.partName))
 				{
 					Logging.Log("Envelope has a part override config");
 					BodyColors overrideColor = ConfigManager.Instance.partConfigs[envelope.partName];
 
-					/*
-					Logging.Log($"{overrideColor.glow.HasValue}");
-					Logging.Log($"{overrideColor.glow.Value}");
-					Logging.Log($"{overrideColor.glowHot.HasValue}");
-					Logging.Log($"{overrideColor.glowHot.Value}");
-					Logging.Log($"{overrideColor.trailPrimary.HasValue}");
-					Logging.Log($"{overrideColor.trailPrimary.Value}");
-					Logging.Log($"{overrideColor.trailSecondary.HasValue}");
-					Logging.Log($"{overrideColor.trailSecondary.Value}");
-					Logging.Log($"{overrideColor.trailTertiary.HasValue}");
-					Logging.Log($"{overrideColor.trailTertiary.Value}");
-					Logging.Log($"{overrideColor.wrapLayer.HasValue}");
-					Logging.Log($"{overrideColor.wrapLayer.Value}");
-					Logging.Log($"{overrideColor.wrapStreak.HasValue}");
-					Logging.Log($"{overrideColor.wrapStreak.Value}");
-					Logging.Log($"{overrideColor.shockwave.HasValue}");
-					Logging.Log($"{overrideColor.shockwave.Value}");
-
-					Logging.Log($"{currentBody.colors.glow.HasValue}");
-					Logging.Log($"{currentBody.colors.glow.Value}");
-					Logging.Log($"{currentBody.colors.glowHot.HasValue}");
-					Logging.Log($"{currentBody.colors.glowHot.Value}");
-					Logging.Log($"{currentBody.colors.trailPrimary.HasValue}");
-					Logging.Log($"{currentBody.colors.trailPrimary.Value}");
-					Logging.Log($"{currentBody.colors.trailSecondary.HasValue}");
-					Logging.Log($"{currentBody.colors.trailSecondary.Value}");
-					Logging.Log($"{currentBody.colors.trailTertiary.HasValue}");
-					Logging.Log($"{currentBody.colors.trailTertiary.Value}");
-					Logging.Log($"{currentBody.colors.wrapLayer.HasValue}");
-					Logging.Log($"{currentBody.colors.wrapLayer.Value}");
-					Logging.Log($"{currentBody.colors.wrapStreak.HasValue}");
-					Logging.Log($"{currentBody.colors.wrapStreak.Value}");
-					Logging.Log($"{currentBody.colors.shockwave.HasValue}");
-					Logging.Log($"{currentBody.colors.shockwave.Value}");
-					*/
-
 					// TODO: This is a mess, please clean up
 					// TODO: Please don't ignore this todo
+					// override the colors with the override
 					if (overrideColor.glow.HasValue) colors.glow = overrideColor.glow;
 					if (overrideColor.glowHot.HasValue) colors.glowHot = overrideColor.glowHot;
 
@@ -303,6 +268,7 @@ namespace Firefly
 					if (overrideColor.shockwave.HasValue) colors.shockwave = overrideColor.shockwave;
 				}
 
+				// add commands to set the color properties
 				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors.glow.Value);
 				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors.glowHot.Value);
 

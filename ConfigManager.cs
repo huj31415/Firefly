@@ -117,6 +117,9 @@ namespace Firefly
 
 		}
 
+		/// <summary>
+		/// Creates a copy of another BodyColors
+		/// </summary>
 		public BodyColors(BodyColors org)
 		{
 			this.glow = org.glow;
@@ -456,10 +459,11 @@ namespace Firefly
 			return true;
 		}
 
+		/// <summary>
+		/// Processes a single part config node
+		/// </summary>
 		bool ProcessPartConfigNode(ConfigNode node, string partId, out BodyColors cfg)
 		{
-			cfg = new BodyColors();
-
 			bool isFormatted = ProcessBodyColors(node, out cfg);
 
 			return isFormatted;
@@ -517,6 +521,7 @@ namespace Firefly
 		{
 			string value = node.GetValue(key);
 
+			// check if null
 			if (value.ToLower() == "null") return null;
 
 			bool success = Utils.EvaluateColorHDR(value, out Color result);

@@ -153,6 +153,7 @@ namespace Firefly
 			GUILayout.Space(20);
 			if (GUILayout.Button("Save overrides to file")) ConfigManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
+			if (GUILayout.Button("Reload assetbundle")) AssetLoader.Instance.ReloadAssets();
 
 			// end
 			GUILayout.EndVertical();

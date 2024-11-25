@@ -44,6 +44,9 @@ namespace Firefly
 		// is everything loaded?
 		public bool allAssetsLoaded = false;
 
+		// the bundle
+		AssetBundle bundle;
+
 		public void Awake()
 		{
 			Instance = this;
@@ -124,7 +127,7 @@ namespace Firefly
 
 			// load the asset bundle
 			string loadPath = Path.Combine(KSPUtil.ApplicationRootPath, bundlePath);
-			AssetBundle bundle = AssetBundle.LoadFromFile(loadPath);
+			bundle = AssetBundle.LoadFromFile(loadPath);
 
 			if (!bundle)
 			{
@@ -158,6 +161,15 @@ namespace Firefly
 					loadedPrefabs.Add(prefab.name, prefab);
 				}
 			}
+		}
+
+		public void ReloadAssets()
+		{
+			bundle.Unload(true);
+			ClearAssets();
+
+			LoadAssets();
+			InitAssets();
 		}
 
 		public bool TryGetShader(string name, out Shader shader)

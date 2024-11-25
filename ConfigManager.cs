@@ -522,10 +522,19 @@ namespace Firefly
 		/// </summary>
 		Color? ReadConfigColorHDR(ConfigNode node, string key, bool partConfig, ref bool isFormatted)
 		{
+			// check if exists
+			if (!node.HasValue(key))
+			{
+				isFormatted = isFormatted && partConfig;
+
+				return null;
+			}
+
+			// get the value
 			string value = node.GetValue(key);
 
 			// check if null
-			if (value.ToLower() == "null")
+			if (value.ToLower() == "null" || value.ToLower() == "default")
 			{
 				isFormatted = isFormatted && partConfig;
 

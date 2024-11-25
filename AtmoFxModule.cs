@@ -269,6 +269,15 @@ namespace Firefly
 					if (overrideColor.shockwave.HasValue) colors.shockwave = overrideColor.shockwave;
 				}
 
+				// is asteroid?
+				float randomnessFactor = 0f;
+				if (envelope.partName == "PotatoRoid" || envelope.partName == "PotatoComet")
+				{
+					Logging.Log("Potatoroid - setting the randomness factor to 1");
+					randomnessFactor = 1f;
+				}
+				fxVessel.commandBuffer.SetGlobalVector("_RandomnessFactor", Vector2.one * randomnessFactor);
+
 				// add commands to set the color properties
 				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors.glow.Value);
 				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors.glowHot.Value);

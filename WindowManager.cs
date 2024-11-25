@@ -130,19 +130,6 @@ namespace Firefly
 				fxModule.ReloadVessel();
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
-			if (GUILayout.Button("Reload All Vessels") && canReload)
-			{
-				for (int i = 0; i < FlightGlobals.VesselsLoaded.Count; i++)
-				{
-					var mod = vessel.FindVesselModuleImplementing<AtmoFxModule>();
-
-					if (mod == null) continue;
-					if (!mod.isLoaded) continue;
-
-					mod.ReloadVessel();
-				}
-				reloadBtnTime = Time.realtimeSinceStartup;
-			}
 
 			// draw config fields
 			for (int i = 0; i < ConfigManager.Instance.modSettings.fields.Count; i++)

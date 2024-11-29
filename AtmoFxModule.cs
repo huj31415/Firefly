@@ -970,9 +970,9 @@ namespace Firefly
 			spd *= aeroFxScalar;
 			*/
 
-			float spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.13f, 1f, AeroFX.state);
+			float spd = AeroFX.FxScalar * (float)ModSettings.Instance["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
-			float delta = Mathf.Abs(spd - lastSpeed) / 2800f;
+			float delta = Mathf.Abs(spd - lastSpeed) / (float)ModSettings.Instance["strength_base"];
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * (1f + delta * 2f));
 
 			lastSpeed = spd;

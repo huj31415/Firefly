@@ -18,7 +18,6 @@ namespace Firefly
 		bool appToggle = false;
 
 		// override toggle values
-		public Dictionary<string, bool> configToggles = new Dictionary<string, bool>();
 		public bool tgl_EffectToggle = true;
 
 		// timer
@@ -27,8 +26,6 @@ namespace Firefly
 		public void Awake()
 		{
 			Instance = this;
-
-			InitializeDefaultValues();
 		}
 
 		public void Start()
@@ -43,19 +40,6 @@ namespace Firefly
 
 			GameEvents.onHideUI.Add(OnHideUi);
 			GameEvents.onShowUI.Add(OnShowUi);
-		}
-
-		/// <summary>
-		/// Initializes the default values of the toggles with the values loaded from the cfg file
-		/// </summary>
-		public void InitializeDefaultValues()
-		{
-			configToggles["hdr_override"] = (bool)ConfigManager.Instance.modSettings["hdr_override"];
-			configToggles["use_colliders"] = (bool)ConfigManager.Instance.modSettings["use_colliders"];
-			configToggles["disable_particles"] = (bool)ConfigManager.Instance.modSettings["disable_particles"];
-			configToggles["disable_sparks"] = (bool)ConfigManager.Instance.modSettings["disable_sparks"];
-			configToggles["disable_debris"] = (bool)ConfigManager.Instance.modSettings["disable_debris"];
-			configToggles["disable_smoke"] = (bool)ConfigManager.Instance.modSettings["disable_smoke"];
 		}
 
 		public void OnDestroy()
@@ -132,21 +116,12 @@ namespace Firefly
 			}
 
 			// draw config fields
-			for (int i = 0; i < ConfigManager.Instance.modSettings.fields.Count; i++)
+			for (int i = 0; i < ModSettings.Instance.fields.Count; i++)
 			{
-				KeyValuePair<string, ModSettings.Field> field = ConfigManager.Instance.modSettings.fields.ElementAt(i);
-				if (field.Value.valueType != ModSettings.ValueType.Boolean) continue;
+				KeyValuePair<string, ModSettings.Field> field = ModSettings.Instance.fields.ElementAt(i);
 
-				DrawConfigField(field.Key, configToggles);
-			}
-
-			// button to apply all overrides
-			if (GUILayout.Button("Apply all overrides"))
-			{
-				for (int i = 0; i < configToggles.Keys.Count; i++)
-				{
-					ApplyOverride(configToggles.Keys.ElementAt(i));
-				}
+				if (field.Value.valueType == ModSettings.ValueType.Boolean) DrawConfigFieldBool(field.Key, ModSettings.Instance.fields);
+				else if (field.Value.valueType == ModSettings.ValueType.Float) DrawConfigFieldFloat(field.Key, ModSettings.Instance.fields);
 			}
 			
 			// other configs
@@ -208,40 +183,27 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Draws a config field with a toggle switch and a button which applies it
-		/// </summary>
-		/// <param name="label">Label to show</param>
-		/// <param name="tgl">The value of the toggle switch</param>
-		/// <returns>The apply button state</returns>
-		bool DrawConfigField(string label, ref bool tgl)
-		{
-			GUILayout.BeginHorizontal();
-				tgl = GUILayout.Toggle(tgl, label);
-				bool result = GUILayout.Button("Apply override");
-			GUILayout.EndHorizontal();
-
-			return result;
-		}
-
-		/// <summary>
 		/// Draws a config field with a toggle switch
 		/// This variant uses a dict instead of a toggle reference
 		/// </summary>
 		/// <param name="label">Label to show</param>
 		/// <param name="tgl">The dict contatining the toggle values</param>
 		/// <returns>The apply button state</returns>
-		void DrawConfigField(string label, Dictionary<string, bool> tgl)
+		void DrawConfigFieldBool(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
-			tgl[label] = GUILayout.Toggle(tgl[label], label);
+			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label);
 		}
-		
-		void ApplyOverride(string key)
-		{
-			bool value = configToggles[key];
-			ConfigManager.Instance.modSettings[key] = value;
 
-			// special cases
-			if (key == "hdr_override") CameraManager.Instance.OverrideHDR(value);
+		void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
+		{
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(label);
+
+			string text = GUILayout.TextField(((float)tgl[label].value).ToString());
+			bool hasValue = float.TryParse(text, out float value);
+			if (hasValue) tgl[label].value = value;
+
+			GUILayout.EndHorizontal();
 		}
 	}
 }

@@ -7,6 +7,8 @@ namespace Firefly
 {
 	public class ModSettings
 	{
+		public static ModSettings Instance { get; private set; }
+
 		public enum ValueType
 		{
 			Boolean,
@@ -27,7 +29,7 @@ namespace Firefly
 
 		public Dictionary<string, Field> fields;
 
-		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles, bool disableSparks, bool disableDebris, bool disableSmoke)
+		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles, bool disableSparks, bool disableDebris, bool disableSmoke, float strengthBase)
 		{
 			this.fields = new Dictionary<string, Field>()
 			{
@@ -36,18 +38,23 @@ namespace Firefly
 				{ "disable_particles", new Field(disableParticles, ValueType.Boolean) },
 				{ "disable_sparks", new Field(disableSparks, ValueType.Boolean) },
 				{ "disable_debris", new Field(disableDebris, ValueType.Boolean) },
-				{ "disable_smoke", new Field(disableSmoke, ValueType.Boolean) }
+				{ "disable_smoke", new Field(disableSmoke, ValueType.Boolean) },
+				{ "strength_base", new Field(strengthBase, ValueType.Float) }
 			};
+
+			Instance = this;
 		}
 
 		public ModSettings()
 		{
 			this.fields = new Dictionary<string, Field>();
+
+			Instance = this;
 		}
 
 		public static ModSettings CreateDefault()
 		{
-			return new ModSettings(true, false, false, false, false, false);
+			return new ModSettings(true, false, false, false, false, false, 2800f);
 		}
 
 		/// <summary>
@@ -260,12 +267,12 @@ namespace Firefly
 
 			// load the actual stuff from the ConfigNode
 			bool isFormatted = true;
-			modSettings["hdr_override"] = ReadSettingsField(settingsNode, "hdr_override", ref isFormatted);
-			modSettings["use_colliders"] = ReadSettingsField(settingsNode, "use_colliders", ref isFormatted);
-			modSettings["disable_particles"] = ReadSettingsField(settingsNode, "disable_particles", ref isFormatted);
-			modSettings["disable_sparks"] = ReadSettingsField(settingsNode, "disable_sparks", ref isFormatted);
-			modSettings["disable_debris"] = ReadSettingsField(settingsNode, "disable_debris", ref isFormatted);
-			modSettings["disable_smoke"] = ReadSettingsField(settingsNode, "disable_smoke", ref isFormatted);
+			for (int i = 0; i < modSettings.fields.Count; i++)
+			{
+				KeyValuePair<string, ModSettings.Field> e = modSettings.fields.ElementAt(i);
+
+				modSettings[e.Key] = ReadSettingsField(settingsNode, e.Key, ref isFormatted);
+			}
 
 			if (!isFormatted)
 			{

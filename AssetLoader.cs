@@ -55,6 +55,11 @@ namespace Firefly
 
 			LoadAssets();
 			InitAssets();
+
+			// disable the stock effects
+			Logging.Log("Disabling stock effects");
+			Logging.Log("Turning the quality down to minimal");
+			GameSettings.AERO_FX_QUALITY = 0;
 		}
 
 		/// <summary>

@@ -969,9 +969,12 @@ namespace Firefly
 			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
 			spd *= aeroFxScalar;
 			*/
-
+			
+			// Pretty much just the FxScalar, but scaled with the strength base value, with an added modifier for the mach effects
 			float spd = AeroFX.FxScalar * (float)ModSettings.Instance["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
+			// Smoothly interpolate the last frame's and this frame's results
+			// automatically adjusts the t value based on how much the results differ
 			float delta = Mathf.Abs(spd - lastSpeed) / (float)ModSettings.Instance["strength_base"];
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * (1f + delta * 2f));
 

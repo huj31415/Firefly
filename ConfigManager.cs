@@ -29,22 +29,6 @@ namespace Firefly
 
 		public Dictionary<string, Field> fields;
 
-		public ModSettings(bool hdrOverride, bool useColliders, bool disableParticles, bool disableSparks, bool disableDebris, bool disableSmoke, float strengthBase)
-		{
-			this.fields = new Dictionary<string, Field>()
-			{
-				{ "hdr_override", new Field(hdrOverride, ValueType.Boolean) },
-				{ "use_colliders", new Field(useColliders, ValueType.Boolean) },
-				{ "disable_particles", new Field(disableParticles, ValueType.Boolean) },
-				{ "disable_sparks", new Field(disableSparks, ValueType.Boolean) },
-				{ "disable_debris", new Field(disableDebris, ValueType.Boolean) },
-				{ "disable_smoke", new Field(disableSmoke, ValueType.Boolean) },
-				{ "strength_base", new Field(strengthBase, ValueType.Float) }
-			};
-
-			Instance = this;
-		}
-
 		public ModSettings()
 		{
 			this.fields = new Dictionary<string, Field>();
@@ -54,7 +38,21 @@ namespace Firefly
 
 		public static ModSettings CreateDefault()
 		{
-			return new ModSettings(true, false, false, false, false, false, 2800f);
+			ModSettings ms = new ModSettings
+			{
+				fields = new Dictionary<string, Field>()
+				{
+					{ "hdr_override", new Field(true, ValueType.Boolean) },
+					{ "use_colliders", new Field(false, ValueType.Boolean) },
+					{ "disable_particles", new Field(false, ValueType.Boolean) },
+					{ "disable_sparks", new Field(false, ValueType.Boolean) },
+					{ "disable_debris", new Field(false, ValueType.Boolean) },
+					{ "disable_smoke", new Field(false, ValueType.Boolean) },
+					{ "strength_base", new Field(2800f, ValueType.Float) }
+				}
+			};
+
+			return ms;
 		}
 
 		/// <summary>

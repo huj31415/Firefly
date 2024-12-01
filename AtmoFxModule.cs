@@ -31,10 +31,16 @@ namespace Firefly
 		public string partName;
 		public Renderer renderer;
 
-		public FxEnvelopeModel(string partName, Renderer renderer)
+		public Vector3 modelScale;
+		public Vector3 envelopeScaleFactor;
+
+		public FxEnvelopeModel(string partName, Renderer renderer, Vector3 modelScale, Vector3 envelopeScaleFactor)
 		{
 			this.partName = partName;
 			this.renderer = renderer;
+
+			this.modelScale = modelScale;
+			this.envelopeScaleFactor = envelopeScaleFactor;
 		}
 	}
 
@@ -44,8 +50,6 @@ namespace Firefly
 	public class AtmoFxVessel
 	{
 		public List<FxEnvelopeModel> fxEnvelope = new List<FxEnvelopeModel>();
-		public List<Vector3> fxEnvelopeProperties = new List<Vector3>();
-		public List<Renderer> fxEnvelopeGenerated = new List<Renderer>();
 		public List<Renderer> particleFxEnvelope = new List<Renderer>();
 
 		public CommandBuffer commandBuffer;
@@ -242,8 +246,8 @@ namespace Firefly
 				FxEnvelopeModel envelope = fxVessel.fxEnvelope[i];
 
 				// set model values
-				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", fxVessel.fxEnvelopeProperties[i*2]);
-				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", fxVessel.fxEnvelopeProperties[i*2 + 1]);
+				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", envelope.modelScale);
+				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", envelope.envelopeScaleFactor);
 
 				// part overrides
 				BodyColors colors = new BodyColors(currentBody.colors);  // create the original colors
@@ -337,9 +341,14 @@ namespace Firefly
 
 					parentRenderer.enabled = false;
 
-					fxVessel.fxEnvelope.Add(new FxEnvelopeModel(Utils.GetPartCfgName(part.partInfo.name), parentRenderer));
-					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_ModelScale
-					fxVessel.fxEnvelopeProperties.Add(Vector3.one);  //_EnvelopeScaleFactor
+					// create the envelope
+					FxEnvelopeModel envelope = new FxEnvelopeModel(
+						Utils.GetPartCfgName(part.partInfo.name),
+						parentRenderer,
+						Vector3.one,
+						Vector3.one
+						);
+					fxVessel.fxEnvelope.Add(envelope);
 
 					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(parentRenderer);
 				}
@@ -380,9 +389,13 @@ namespace Firefly
 
 				if (!Utils.IsPartBoundCompatible(part)) continue;
 
-				fxVessel.fxEnvelope.Add(new FxEnvelopeModel(Utils.GetPartCfgName(part.partInfo.name), model));
-				fxVessel.fxEnvelopeProperties.Add(model.transform.lossyScale);  //_ModelScale
-				fxVessel.fxEnvelopeProperties.Add(new Vector3(1.05f, 1.07f, 1.05f));  //_EnvelopeScaleFactor
+				// create the envelope
+				FxEnvelopeModel envelope = new FxEnvelopeModel(
+					Utils.GetPartCfgName(part.partInfo.name),
+					model,
+					model.transform.lossyScale,
+					new Vector3(1.05f, 1.07f, 1.05f));
+				fxVessel.fxEnvelope.Add(envelope);
 
 				fxVessel.particleFxEnvelope.Add(model);
 			}
@@ -397,8 +410,6 @@ namespace Firefly
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.fxEnvelopeProperties.Clear();
-			fxVessel.fxEnvelopeGenerated.Clear();
 			fxVessel.particleFxEnvelope.Clear();
 
 			for (int i = 0; i < vessel.parts.Count; i++)
@@ -618,7 +629,6 @@ namespace Firefly
 			DestroyCommandBuffer();
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.fxEnvelopeProperties.Clear();
 			fxVessel.particleFxEnvelope.Clear();
 
 			if (!onlyEnvelopes)

@@ -445,16 +445,21 @@ namespace Firefly
 			};
 
 			// read the affected body array
-			ConfigNode affectedBodies = node.GetNode("AffectedBodies");
-			string[] array = affectedBodies.GetValues("item");
+			string array = node.GetValue("affected_bodies");
 
-			if (array.Length < 1)
+			string[] strings = array.Split(',');
+			for (int i = 0; i < strings.Length; i++)
+			{
+				strings[i] = strings[i].Trim();
+			}
+
+			if (strings.Length < 1)
 			{
 				Logging.Log("Planet pack config has zero affected bodies, it will not have any effect");
 				return false;
 			}
 
-			cfg.affectedBodies = array;
+			cfg.affectedBodies = strings;
 
 			// is the config formatted correctly?
 			if (!isFormatted)

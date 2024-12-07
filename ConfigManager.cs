@@ -43,7 +43,6 @@ namespace Firefly
 				fields = new Dictionary<string, Field>()
 				{
 					{ "hdr_override", new Field(true, ValueType.Boolean) },
-					{ "use_colliders", new Field(false, ValueType.Boolean) },
 					{ "disable_particles", new Field(false, ValueType.Boolean) },
 					{ "disable_sparks", new Field(false, ValueType.Boolean) },
 					{ "disable_debris", new Field(false, ValueType.Boolean) },
@@ -67,6 +66,21 @@ namespace Firefly
 
 				Logging.Log($"ModSettings -  Saved {elem.Key} to node as {elem.Value.value}");
 			}
+		}
+
+		public override string ToString()
+		{
+			string result = "";
+
+			for (int i = 0; i < fields.Count; i++)
+			{
+				KeyValuePair<string, Field> element = fields.ElementAt(i);
+				result += $"<{element.Value.valueType}>{element.Key}";
+				result += $": {element.Value.value}";
+				result += "\n";
+			}
+
+			return result;
 		}
 
 		/// <summary>
@@ -278,7 +292,7 @@ namespace Firefly
 				modSettings = ModSettings.CreateDefault();
 			}
 
-			Logging.Log($"UseColliders:{modSettings["use_colliders"]} DisableParticles:{modSettings["disable_particles"]}");
+			Logging.Log(modSettings.ToString());
 		}
 
 		/// <summary>

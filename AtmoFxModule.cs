@@ -326,7 +326,7 @@ namespace Firefly
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length > 0)
 			{
-				Logging.Log($"Part {part.name} has a defined effect envelope. Skipping collider search.");
+				Logging.Log($"Part {part.name} has a defined effect envelope. Skipping mesh search.");
 
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{

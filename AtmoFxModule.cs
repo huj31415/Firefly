@@ -605,16 +605,16 @@ namespace Firefly
 			Vector3 worldVel = -GetEntryVelocity();
 
 			// sparks	
-			//fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
+			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * fxVessel.lengthMultiplier;
 
 			// chunks
-			fxVessel.chunkParticles.transform.localPosition = direction * -1.24f * fxVessel.lengthMultiplier;
+			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * fxVessel.lengthMultiplier;
 
 			// alternate chunks
-			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f * fxVessel.lengthMultiplier;
+			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * fxVessel.lengthMultiplier;
 
 			// smoke
-			fxVessel.smokeParticles.transform.localPosition = direction * -2f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
+			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);

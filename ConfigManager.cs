@@ -292,7 +292,7 @@ namespace Firefly
 				modSettings = ModSettings.CreateDefault();
 			}
 
-			Logging.Log(modSettings.ToString());
+			Logging.Log("Loaded Mod Settings: \n" + modSettings.ToString());
 		}
 
 		/// <summary>
@@ -313,6 +313,8 @@ namespace Firefly
 				for (int i = 0; i < nodes.Length; i++)
 				{
 					ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
+
+					Logging.Log($"Loaded planet pack cfg {nodes[i].name}");
 
 					planetPackConfigs.Add(cfg);
 				}

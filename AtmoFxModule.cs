@@ -50,7 +50,7 @@ namespace Firefly
 	public class AtmoFxVessel
 	{
 		public List<FxEnvelopeModel> fxEnvelope = new List<FxEnvelopeModel>();
-		public List<Renderer> particleFxEnvelope = new List<Renderer>();
+		//public List<Renderer> particleFxEnvelope = new List<Renderer>();
 
 		public CommandBuffer commandBuffer;
 
@@ -63,7 +63,7 @@ namespace Firefly
 		public ParticleSystem alternateChunkParticles;
 		public ParticleSystem smokeParticles;
 
-		public Mesh totalEnvelope;
+		//public Mesh totalEnvelope;
 
 		public Camera airstreamCamera;
 		public RenderTexture airstreamTexture;
@@ -350,7 +350,7 @@ namespace Firefly
 						);
 					fxVessel.fxEnvelope.Add(envelope);
 
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(parentRenderer);
+					//if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(parentRenderer);
 				}
 
 				// skip model search
@@ -397,7 +397,7 @@ namespace Firefly
 					new Vector3(1.05f, 1.07f, 1.05f));
 				fxVessel.fxEnvelope.Add(envelope);
 
-				fxVessel.particleFxEnvelope.Add(model);
+				//fxVessel.particleFxEnvelope.Add(model);
 			}
 		}
 
@@ -410,7 +410,7 @@ namespace Firefly
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.particleFxEnvelope.Clear();
+			//fxVessel.particleFxEnvelope.Clear();
 
 			for (int i = 0; i < vessel.parts.Count; i++)
 			{
@@ -420,6 +420,7 @@ namespace Firefly
 				CreatePartEnvelope(part);
 			}
 
+			/*
 			// set the vessel position to zero, to make combining possible
 			Vector3 orgPosition = vessel.transform.position;
 			vessel.transform.position = Vector3.zero;
@@ -445,6 +446,7 @@ namespace Firefly
 
 			// reset the vessel position back to original
 			vessel.transform.position = orgPosition;
+			*/
 		}
 
 		/// <summary>
@@ -479,11 +481,11 @@ namespace Firefly
 			StoreParticleSystem(fxVessel.alternateChunkParticles);
 			StoreParticleSystem(fxVessel.smokeParticles);
 
-			// initialize particle systems
-			fxVessel.sparkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.chunkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.alternateChunkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.smokeParticles.transform.rotation = Quaternion.identity;
+			// initialize particle system transforms, spawning them at the center of the bounding box
+			InitializeParticleTransform(fxVessel.sparkParticles.transform);
+			InitializeParticleTransform(fxVessel.chunkParticles.transform);
+			InitializeParticleTransform(fxVessel.alternateChunkParticles.transform);
+			InitializeParticleTransform(fxVessel.smokeParticles.transform);
 
 			// disable if needed
 			if ((bool)ConfigManager.Instance.modSettings["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
@@ -499,7 +501,8 @@ namespace Firefly
 				ParticleSystem ps = fxVessel.allParticles[i];
 
 				ParticleSystem.ShapeModule shapeModule = ps.shape;
-				shapeModule.mesh = fxVessel.totalEnvelope;
+				shapeModule.scale = fxVessel.vesselBoundExtents * 2f;
+				//shapeModule.mesh = fxVessel.totalEnvelope;
 
 				ParticleSystem.VelocityOverLifetimeModule velocityModule = ps.velocityOverLifetime;
 				velocityModule.radialMultiplier = 1f;
@@ -517,6 +520,12 @@ namespace Firefly
 
 			ParticleSystem.MinMaxCurve curve = ps.emission.rateOverTime;
 			fxVessel.orgParticleRates.Add(new FloatPair(curve.constantMin, curve.constantMax));
+		}
+
+		void InitializeParticleTransform(Transform t)
+		{
+			t.localRotation = Quaternion.identity;
+			t.localPosition = fxVessel.vesselBoundCenter;
 		}
 
 		/// <summary>
@@ -596,7 +605,7 @@ namespace Firefly
 			Vector3 worldVel = -GetEntryVelocity();
 
 			// sparks	
-			fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
+			//fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
 
 			// chunks
 			fxVessel.chunkParticles.transform.localPosition = direction * -1.24f * fxVessel.lengthMultiplier;
@@ -623,13 +632,13 @@ namespace Firefly
 
 			isLoaded = false;
 
-			Destroy(fxVessel.totalEnvelope);
+			//Destroy(fxVessel.totalEnvelope);
 
 			// destroy the commandbuffer
 			DestroyCommandBuffer();
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.particleFxEnvelope.Clear();
+			//fxVessel.particleFxEnvelope.Clear();
 
 			if (!onlyEnvelopes)
 			{
@@ -780,6 +789,9 @@ namespace Firefly
 				vesselPoints[i] = vessel.transform.TransformPoint(fxVessel.vesselBounds[i]);
 			}
 			DrawingUtils.DrawBox(vesselPoints, Color.green);
+
+			// particle bounds
+			DrawingUtils.DrawTransformBox(fxVessel.sparkParticles.transform, fxVessel.sparkParticles.shape.scale, Color.green);
 
 			// vessel axes
 			Vector3 fwd = vessel.GetFwdVector();

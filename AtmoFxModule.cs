@@ -86,7 +86,7 @@ namespace Firefly
 		public AtmoFxVessel fxVessel;
 		public bool isLoaded = false;
 
-		bool debugMode = false;
+		public bool debugMode = false;
 
 		float lastFixedTime;
 		float desiredRate;
@@ -657,24 +657,9 @@ namespace Firefly
 			RemoveVesselFx(false);
 		}
 
-		void Debug_ToggleEnvelopes()
-		{
-			bool state = fxVessel.fxEnvelope[0].renderer.gameObject.activeSelf;
-
-			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
-			{
-				fxVessel.fxEnvelope[i].renderer.gameObject.SetActive(!state);
-			}
-		}
-
 		public void Update()
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
-
-			// debug mode
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
 			// Reload if the vessel is marked for reloading
 			if (reloadDelayFrames > 0 && vessel.loaded && !vessel.packed)
@@ -751,9 +736,6 @@ namespace Firefly
 				vesselPoints[i] = vessel.transform.TransformPoint(fxVessel.vesselBounds[i]);
 			}
 			DrawingUtils.DrawBox(vesselPoints, Color.green);
-
-			// particle bounds
-			DrawingUtils.DrawTransformBox(fxVessel.sparkParticles.transform, fxVessel.sparkParticles.shape.scale, Color.green);
 
 			// vessel axes
 			Vector3 fwd = vessel.GetFwdVector();

@@ -44,6 +44,7 @@ namespace Firefly
 				fields = new Dictionary<string, Field>()
 				{
 					{ "hdr_override", new Field(true, ValueType.Boolean) },
+					{ "disable_bowshock", new Field(false, ValueType.Boolean) },
 					{ "disable_particles", new Field(false, ValueType.Boolean) },
 					{ "disable_sparks", new Field(false, ValueType.Boolean) },
 					{ "disable_debris", new Field(false, ValueType.Boolean) },

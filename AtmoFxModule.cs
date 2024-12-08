@@ -718,6 +718,8 @@ namespace Firefly
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+
+				fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.Instance["disable_bowshock"] ? 1 : 0);
 			}
 
 			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so

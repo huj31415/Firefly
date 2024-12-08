@@ -312,10 +312,16 @@ namespace Firefly
 			{
 				for (int i = 0; i < nodes.Length; i++)
 				{
-					ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
+					bool success = ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
+					Logging.Log($"Processing planet pack cfg '{nodes[i].name}'");
 
-					Logging.Log($"Loaded planet pack cfg {nodes[i].name}");
+					if (!success)
+					{
+						Logging.Log("Planet pack cfg can't be registered");
+						continue;
+					}
 
+					Logging.Log($"Successfully registered planet pack cfg '{nodes[i].name}'");
 					planetPackConfigs.Add(cfg);
 				}
 			}
@@ -399,7 +405,7 @@ namespace Firefly
 
 			string bodyName = node.GetValue("name");
 
-			Logging.Log($"Loading body {bodyName}");
+			Logging.Log($"Loading body '{bodyName}'");
 
 			// make sure there aren't any duplicates
 			if (bodyConfigs.ContainsKey(bodyName))
@@ -480,7 +486,7 @@ namespace Firefly
 			// is the config formatted correctly?
 			if (!isFormatted)
 			{
-				Logging.Log($"Planet pack config is not formatted correctly: {node.name}");
+				Logging.Log($"Planet pack config '{node.name}' is not formatted correctly");
 				return false;
 			}
 

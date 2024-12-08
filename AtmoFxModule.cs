@@ -214,7 +214,7 @@ namespace Firefly
 			PopulateCommandBuffer();
 
 			// create the particles
-			if (!(bool)ConfigManager.Instance.modSettings["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
+			if (!(bool)ModSettings.Instance["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
@@ -452,13 +452,13 @@ namespace Firefly
 			InitializeParticleTransform(fxVessel.smokeParticles.transform);
 
 			// disable if needed
-			if ((bool)ConfigManager.Instance.modSettings["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
-			if ((bool)ConfigManager.Instance.modSettings["disable_debris"])
+			if ((bool)ModSettings.Instance["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
+			if ((bool)ModSettings.Instance["disable_debris"])
 			{
 				fxVessel.chunkParticles.gameObject.SetActive(false);
 				fxVessel.alternateChunkParticles.gameObject.SetActive(false);
 			}
-			if ((bool)ConfigManager.Instance.modSettings["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
+			if ((bool)ModSettings.Instance["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
 
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{

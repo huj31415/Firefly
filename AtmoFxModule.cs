@@ -825,6 +825,8 @@ namespace Firefly
 				List<Renderer> renderers = vsl.parts[i].FindModelRenderersCached();
 				for (int r = 0; r < renderers.Count; r++)
 				{
+					if (!renderers[r].gameObject.activeInHierarchy) continue;
+
 					// try getting the mesh filter
 					bool hasFilter = renderers[r].TryGetComponent(out MeshFilter meshFilter);
 
@@ -896,46 +898,6 @@ namespace Firefly
 		/// </summary>
 		float GetEntrySpeed()
 		{
-			/*
-			// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
-			double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
-			double vesselMach = vessel.mach;
-
-			// get the stock aeroFX scalar
-			float aeroFxScalar = AeroFX.FxScalar + 0.26f;  // adding 0.26 and body scalar to make the effect start earlier
-
-			// apply the body config modifiers
-			for (int i = 0; i < currentBody.transitionModifiers.Length; i++)
-			{
-				TransitionModifier mod = currentBody.transitionModifiers[i];
-
-				float value = mod.value * (mod.stockfxDependent ? (1f - AeroFX.FxScalar) : 1f);
-
-				switch (mod.operation)
-				{
-					case ModifierOperation.ADD:
-						aeroFxScalar += value;
-						break;
-					case ModifierOperation.SUBTRACT:
-						aeroFxScalar -= value;
-						break;
-					case ModifierOperation.MULTIPLY:
-						aeroFxScalar *= Mathf.Max(value, mod.stockfxDependent ? 1f : 0f);  // if the effect is stockfx dependent then clamp it to not go below 1
-						break;
-					case ModifierOperation.DIVIDE:
-						aeroFxScalar /= value;
-						break;
-					default:
-						break;
-				}
-			}
-
-			// convert to m/s
-			spd = (float)(mach * vesselMach);
-			spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
-			spd *= aeroFxScalar;
-			*/
-			
 			// Pretty much just the FxScalar, but scaled with the strength base value, with an added modifier for the mach effects
 			float spd = AeroFX.FxScalar * (float)ModSettings.Instance["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
@@ -970,13 +932,6 @@ namespace Firefly
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
-			/*
-			if (WindowManager.Instance.tgl_SpeedMethod)
-			{
-				return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
-			}
-			*/
-
 			return GetEntrySpeed() * currentBody.strengthMultiplier;
 		}
 

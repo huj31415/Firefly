@@ -11,6 +11,7 @@ namespace Firefly
 		public static WindowManager Instance { get; private set; }
 
 		ApplicationLauncherButton appButton;
+		Rect settingsWindowPosition = new Rect(600, 100, 300, 100);
 		Rect windowPosition = new Rect(0, 100, 300, 100);
 		Rect infoWindowPosition = new Rect(300, 100, 300, 100);
 
@@ -81,12 +82,38 @@ namespace Firefly
 		{
 			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
 
-			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, "Atmospheric Effects Configuration");
+			settingsWindowPosition = GUILayout.Window(511, settingsWindowPosition, OnSettingsWindow, "Firefly Settingss");
+			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, "Quick actions");
 			infoWindowPosition = GUILayout.Window(410, infoWindowPosition, OnInfoWindow, "Atmospheric Effects Info");
 		}
 
 		/// <summary>
 		/// Config and override window
+		/// </summary>
+		void OnSettingsWindow(int id)
+		{
+			// drawing
+			GUILayout.BeginVertical();
+
+			// draw config fields
+			for (int i = 0; i < ModSettings.Instance.fields.Count; i++)
+			{
+				KeyValuePair<string, ModSettings.Field> field = ModSettings.Instance.fields.ElementAt(i);
+
+				if (field.Value.valueType == ModSettings.ValueType.Boolean) DrawConfigFieldBool(field.Key, ModSettings.Instance.fields);
+				else if (field.Value.valueType == ModSettings.ValueType.Float) DrawConfigFieldFloat(field.Key, ModSettings.Instance.fields);
+			}
+
+			GUILayout.Space(20);
+			if (GUILayout.Button("Save overrides to file")) SettingsManager.Instance.SaveModSettings();
+
+			// end
+			GUILayout.EndVertical();
+			GUI.DragWindow();
+		}
+
+		/// <summary>
+		/// Quick actions window
 		/// </summary>
 		void OnWindow(int id)
 		{
@@ -114,19 +141,8 @@ namespace Firefly
 				fxModule.ReloadVessel();
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
-
-			// draw config fields
-			for (int i = 0; i < ModSettings.Instance.fields.Count; i++)
-			{
-				KeyValuePair<string, ModSettings.Field> field = ModSettings.Instance.fields.ElementAt(i);
-
-				if (field.Value.valueType == ModSettings.ValueType.Boolean) DrawConfigFieldBool(field.Key, ModSettings.Instance.fields);
-				else if (field.Value.valueType == ModSettings.ValueType.Float) DrawConfigFieldFloat(field.Key, ModSettings.Instance.fields);
-			}
 			
-			// other configs
 			GUILayout.Space(20);
-			if (GUILayout.Button("Save overrides to file")) SettingsManager.Instance.SaveModSettings();
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 			if (GUILayout.Button($"Toggle debug vis {(fxModule.debugMode ? "(TURN OFF)" : "(TURN ON)")}")) fxModule.debugMode = !fxModule.debugMode;
 			if (GUILayout.Button("Reload assetbundle")) AssetLoader.Instance.ReloadAssets();

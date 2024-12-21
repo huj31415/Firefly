@@ -924,7 +924,7 @@ namespace Firefly
 			// or if the base radius is 3 then the result will be 1.8
 			float result = 1f + (baseRadius - 1f) * 0.3f;
 
-			return result * currentBody.lengthMultiplier;
+			return result * currentBody.lengthMultiplier * (float)ModSettings.Instance["length_mult"];
 		}
 
 		/// <summary>

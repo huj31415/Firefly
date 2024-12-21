@@ -95,6 +95,8 @@ namespace Firefly
 			// drawing
 			GUILayout.BeginVertical();
 
+			GUILayout.Label("Fields that need a reload to update are marked with *");
+
 			// draw config fields
 			for (int i = 0; i < ModSettings.Instance.fields.Count; i++)
 			{
@@ -145,6 +147,8 @@ namespace Firefly
 			GUILayout.Space(20);
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 			if (GUILayout.Button($"Toggle debug vis {(fxModule.debugMode ? "(TURN OFF)" : "(TURN ON)")}")) fxModule.debugMode = !fxModule.debugMode;
+
+			GUILayout.Space(20);
 			if (GUILayout.Button("Reload assetbundle")) AssetLoader.Instance.ReloadAssets();
 
 			// end
@@ -213,8 +217,10 @@ namespace Firefly
 
 		void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
+			string needsReload = tgl[label].needsReload ? "*" : "";
+
 			GUILayout.BeginHorizontal();
-			GUILayout.Label(label);
+			GUILayout.Label(label + needsReload);
 
 			string text = GUILayout.TextField(((float)tgl[label].value).ToString());
 			bool hasValue = float.TryParse(text, out float value);

@@ -21,10 +21,13 @@ namespace Firefly
 			public object value;
 			public ValueType valueType;
 
-			public Field(object value, ValueType valueType)
+			public bool needsReload;
+
+			public Field(object value, ValueType valueType, bool needsReload)
 			{
 				this.value = value;
 				this.valueType = valueType;
+				this.needsReload = needsReload;
 			}
 		}
 
@@ -43,14 +46,14 @@ namespace Firefly
 			{
 				fields = new Dictionary<string, Field>()
 				{
-					{ "hdr_override", new Field(true, ValueType.Boolean) },
-					{ "disable_bowshock", new Field(false, ValueType.Boolean) },
-					{ "disable_particles", new Field(false, ValueType.Boolean) },
-					{ "disable_sparks", new Field(false, ValueType.Boolean) },
-					{ "disable_debris", new Field(false, ValueType.Boolean) },
-					{ "disable_smoke", new Field(false, ValueType.Boolean) },
-					{ "strength_base", new Field(2800f, ValueType.Float) },
-					{ "length_mult", new Field(1f, ValueType.Float) }
+					{ "hdr_override", new Field(true, ValueType.Boolean, false) },
+					{ "disable_bowshock", new Field(false, ValueType.Boolean, false) },
+					{ "disable_particles", new Field(false, ValueType.Boolean, true) },
+					{ "disable_sparks", new Field(false, ValueType.Boolean, true) },
+					{ "disable_debris", new Field(false, ValueType.Boolean, true) },
+					{ "disable_smoke", new Field(false, ValueType.Boolean, true) },
+					{ "strength_base", new Field(2800f, ValueType.Float, false) },
+					{ "length_mult", new Field(1f, ValueType.Float, true) }
 				}
 			};
 

@@ -205,16 +205,23 @@ namespace Firefly
 
 		/// <summary>
 		/// Draws a config field with a toggle switch
-		/// This variant uses a dict instead of a toggle reference
 		/// </summary>
 		/// <param name="label">Label to show</param>
 		/// <param name="tgl">The dict contatining the toggle values</param>
 		/// <returns>The apply button state</returns>
 		void DrawConfigFieldBool(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
-			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label);
+			string needsReload = tgl[label].needsReload ? "*" : "";
+
+			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label + needsReload);
 		}
 
+		/// <summary>
+		/// Draws a config field with a number input
+		/// </summary>
+		/// <param name="label">Label to show</param>
+		/// <param name="tgl">The dict contatining the toggle values</param>
+		/// <returns>The apply button state</returns>
 		void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
 			string needsReload = tgl[label].needsReload ? "*" : "";

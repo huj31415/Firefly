@@ -234,6 +234,7 @@
     <Compile Include="ConfigManager.cs" />
     <Compile Include="DrawingUtils.cs" />
     <Compile Include="AtmoFxModule.cs" />
+    <Compile Include="EffectEditor.cs" />
     <Compile Include="EventManager.cs" />
     <Compile Include="AssetLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

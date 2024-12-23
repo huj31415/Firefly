@@ -98,12 +98,12 @@ namespace Firefly
 			GUILayout.Label("Fields that need a reload to update are marked with *");
 
 			// draw config fields
-			for (int i = 0; i < ModSettings.Instance.fields.Count; i++)
+			for (int i = 0; i < ModSettings.I.fields.Count; i++)
 			{
-				KeyValuePair<string, ModSettings.Field> field = ModSettings.Instance.fields.ElementAt(i);
+				KeyValuePair<string, ModSettings.Field> field = ModSettings.I.fields.ElementAt(i);
 
-				if (field.Value.valueType == ModSettings.ValueType.Boolean) DrawConfigFieldBool(field.Key, ModSettings.Instance.fields);
-				else if (field.Value.valueType == ModSettings.ValueType.Float) DrawConfigFieldFloat(field.Key, ModSettings.Instance.fields);
+				if (field.Value.valueType == ModSettings.ValueType.Boolean) GuiUtils.DrawConfigFieldBool(field.Key, ModSettings.I.fields);
+				else if (field.Value.valueType == ModSettings.ValueType.Float) GuiUtils.DrawConfigFieldFloat(field.Key, ModSettings.I.fields);
 			}
 
 			GUILayout.Space(20);
@@ -201,39 +201,6 @@ namespace Firefly
 			// end
 			GUILayout.EndVertical();
 			GUI.DragWindow();
-		}
-
-		/// <summary>
-		/// Draws a config field with a toggle switch
-		/// </summary>
-		/// <param name="label">Label to show</param>
-		/// <param name="tgl">The dict contatining the toggle values</param>
-		/// <returns>The apply button state</returns>
-		void DrawConfigFieldBool(string label, Dictionary<string, ModSettings.Field> tgl)
-		{
-			string needsReload = tgl[label].needsReload ? "*" : "";
-
-			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label + needsReload);
-		}
-
-		/// <summary>
-		/// Draws a config field with a number input
-		/// </summary>
-		/// <param name="label">Label to show</param>
-		/// <param name="tgl">The dict contatining the toggle values</param>
-		/// <returns>The apply button state</returns>
-		void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
-		{
-			string needsReload = tgl[label].needsReload ? "*" : "";
-
-			GUILayout.BeginHorizontal();
-			GUILayout.Label(label + needsReload);
-
-			string text = GUILayout.TextField(((float)tgl[label].value).ToString());
-			bool hasValue = float.TryParse(text, out float value);
-			if (hasValue) tgl[label].value = value;
-
-			GUILayout.EndHorizontal();
 		}
 	}
 }

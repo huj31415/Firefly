@@ -8,7 +8,7 @@ namespace Firefly
 {
 	public class ModSettings
 	{
-		public static ModSettings Instance { get; private set; }
+		public static ModSettings I { get; private set; }
 
 		public enum ValueType
 		{
@@ -37,7 +37,7 @@ namespace Firefly
 		{
 			this.fields = new Dictionary<string, Field>();
 
-			Instance = this;
+			I = this;
 		}
 
 		public static ModSettings CreateDefault()

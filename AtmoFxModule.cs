@@ -96,6 +96,8 @@ namespace Firefly
 
 		public BodyConfig currentBody;
 
+		public bool doEffectEditor = false;
+
 		// Snippet taken from Reentry Particle Effects by pizzaoverhead
 		AerodynamicsFX _aeroFX;
 		public AerodynamicsFX AeroFX
@@ -122,7 +124,7 @@ namespace Firefly
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		void CreateVesselFx()
+		public void CreateVesselFx()
 		{
 			if (!WindowManager.Instance.tgl_EffectToggle) return;
 
@@ -214,7 +216,7 @@ namespace Firefly
 			PopulateCommandBuffer();
 
 			// create the particles
-			if (!(bool)ModSettings.Instance["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
+			if (!(bool)ModSettings.I["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
@@ -452,13 +454,13 @@ namespace Firefly
 			InitializeParticleTransform(fxVessel.smokeParticles.transform);
 
 			// disable if needed
-			if ((bool)ModSettings.Instance["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
-			if ((bool)ModSettings.Instance["disable_debris"])
+			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
+			if ((bool)ModSettings.I["disable_debris"])
 			{
 				fxVessel.chunkParticles.gameObject.SetActive(false);
 				fxVessel.alternateChunkParticles.gameObject.SetActive(false);
 			}
-			if ((bool)ModSettings.Instance["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
+			if ((bool)ModSettings.I["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
 
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
@@ -678,12 +680,14 @@ namespace Firefly
 			{
 				lastFixedTime = Time.fixedTime;
 
-				float entrySpeed = GetAdjustedEntrySpeed();
+				EffectEditor editor = EffectEditor.Instance;
 
-				// update particles
+				float entrySpeed = doEffectEditor ? editor.effectSpeed : GetAdjustedEntrySpeed();
+
+				// update particle stuff like strength and direction
 				if (fxVessel.hasParticles) UpdateParticleSystems();
 
-				// position the cameras
+				// position the camera where it can see the entire vessel
 				fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();
 				fxVessel.airstreamCamera.transform.LookAt(vessel.transform.TransformPoint(fxVessel.vesselBoundCenter));
 
@@ -693,22 +697,22 @@ namespace Firefly
 				Matrix4x4 VP = P * V;
 
 				// update the material with dynamic properties
-				fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
+				fxVessel.material.SetVector("_Velocity", doEffectEditor ? editor.GetWorldDirection() : GetEntryVelocity());
 				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
 				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
 				fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
-				fxVessel.material.SetFloat("_FxState", AeroFX.state);
-				fxVessel.material.SetFloat("_AngleOfAttack", Utils.GetAngleOfAttack(vessel));
+				fxVessel.material.SetFloat("_FxState", doEffectEditor ? editor.effectState : AeroFX.state);
+				fxVessel.material.SetFloat("_AngleOfAttack", doEffectEditor ? 0f : Utils.GetAngleOfAttack(vessel));
 				fxVessel.material.SetFloat("_ShadowPower", 0f);
 				fxVessel.material.SetFloat("_VelDotPower", 0f);
 				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
 
-				fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.Instance["disable_bowshock"] ? 1 : 0);
+				fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.I["disable_bowshock"] ? 1 : 0);
 			}
 
 			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so
-			if (vessel.altitude > vessel.mainBody.atmosphereDepth && isLoaded)
+			if (vessel.altitude > vessel.mainBody.atmosphereDepth && isLoaded && !doEffectEditor)
 			{
 				RemoveVesselFx(false);
 			}
@@ -899,11 +903,11 @@ namespace Firefly
 		float GetEntrySpeed()
 		{
 			// Pretty much just the FxScalar, but scaled with the strength base value, with an added modifier for the mach effects
-			float spd = AeroFX.FxScalar * (float)ModSettings.Instance["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
+			float spd = AeroFX.FxScalar * (float)ModSettings.I["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
 			// Smoothly interpolate the last frame's and this frame's results
 			// automatically adjusts the t value based on how much the results differ
-			float delta = Mathf.Abs(spd - lastSpeed) / (float)ModSettings.Instance["strength_base"];
+			float delta = Mathf.Abs(spd - lastSpeed) / (float)ModSettings.I["strength_base"];
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * (1f + delta * 2f));
 
 			lastSpeed = spd;
@@ -924,7 +928,7 @@ namespace Firefly
 			// or if the base radius is 3 then the result will be 1.8
 			float result = 1f + (baseRadius - 1f) * 0.3f;
 
-			return result * currentBody.lengthMultiplier * (float)ModSettings.Instance["length_mult"];
+			return result * currentBody.lengthMultiplier * (float)ModSettings.I["length_mult"];
 		}
 
 		/// <summary>

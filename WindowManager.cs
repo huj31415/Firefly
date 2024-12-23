@@ -23,10 +23,17 @@ namespace Firefly
 
 		// timer
 		float reloadBtnTime = 0f;
+
+		// effect editor
+		EffectEditor effectEditor;
+		Rect effectEditorPosition = new Rect(900, 100, 300, 100);
+		bool effectEditorActive = false;
 		
 		public void Awake()
 		{
 			Instance = this;
+
+			effectEditor = new EffectEditor();
 		}
 
 		public void Start()
@@ -82,9 +89,11 @@ namespace Firefly
 		{
 			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
 
-			settingsWindowPosition = GUILayout.Window(511, settingsWindowPosition, OnSettingsWindow, "Firefly Settingss");
+			settingsWindowPosition = GUILayout.Window(511, settingsWindowPosition, OnSettingsWindow, "Firefly Settings");
 			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, "Quick actions");
-			infoWindowPosition = GUILayout.Window(410, infoWindowPosition, OnInfoWindow, "Atmospheric Effects Info");
+			infoWindowPosition = GUILayout.Window(410, infoWindowPosition, OnInfoWindow, "Info");
+
+			if (effectEditorActive) effectEditorPosition = GUILayout.Window(512, effectEditorPosition, effectEditor.Gui, "Effect editor");
 		}
 
 		/// <summary>
@@ -108,6 +117,14 @@ namespace Firefly
 
 			GUILayout.Space(20);
 			if (GUILayout.Button("Save overrides to file")) SettingsManager.Instance.SaveModSettings();
+
+			GUILayout.Space(20);
+			if (GUILayout.Button($"{(effectEditorActive ? "Close" : "Open")} effect editor"))
+			{
+				effectEditorActive = !effectEditorActive;
+				if (effectEditorActive) effectEditor.Open();
+				else effectEditor.Close();
+			}
 
 			// end
 			GUILayout.EndVertical();

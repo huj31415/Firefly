@@ -546,15 +546,17 @@ namespace Firefly
 		/// </summary>
 		void UpdateParticleSystems()
 		{
+			float entrySpeed = doEffectEditor ? EffectEditor.Instance.effectSpeed : GetAdjustedEntrySpeed();
+
 			// check if we should actually do the particles
-			if (GetAdjustedEntrySpeed() < currentBody.particleThreshold)
+			if (entrySpeed < currentBody.particleThreshold)
 			{
 				KillAllParticles();
 				return;
 			}
 
 			// rate
-			desiredRate = Mathf.Clamp01((GetAdjustedEntrySpeed() - currentBody.particleThreshold) / 600f);
+			desiredRate = Mathf.Clamp01((entrySpeed - currentBody.particleThreshold) / 600f);
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
@@ -566,8 +568,8 @@ namespace Firefly
 			}
 
 			// world velocity
-			Vector3 direction = vessel.transform.InverseTransformDirection(GetEntryVelocity());
-			Vector3 worldVel = -GetEntryVelocity();
+			Vector3 direction = doEffectEditor ? EffectEditor.Instance.effectDirection : vessel.transform.InverseTransformDirection(GetEntryVelocity());
+			Vector3 worldVel = doEffectEditor ? -EffectEditor.Instance.GetWorldDirection() : -GetEntryVelocity();
 
 			// sparks	
 			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * fxVessel.lengthMultiplier;
@@ -947,7 +949,7 @@ namespace Firefly
 			float maxExtent = fxVessel.vesselBoundRadius;
 			float distance = maxExtent * 1.1f;
 
-			Vector3 localDir = vessel.transform.InverseTransformDirection(GetEntryVelocity());
+			Vector3 localDir = doEffectEditor ? EffectEditor.Instance.effectDirection : vessel.transform.InverseTransformDirection(GetEntryVelocity());
 			Vector3 localPos = fxVessel.vesselBoundCenter + distance * localDir;
 
 			return vessel.transform.TransformPoint(localPos);

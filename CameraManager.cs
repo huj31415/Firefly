@@ -26,7 +26,7 @@ namespace Firefly
 		{
 			Instance = this;
 
-			OverrideHDR((bool)ModSettings.Instance["hdr_override"]);
+			OverrideHDR((bool)ModSettings.I["hdr_override"]);
 		}
 
 		/// <summary>
@@ -76,7 +76,7 @@ namespace Firefly
 		{
 			isHdr = hdr;
 
-			ModSettings.Instance["hdr_override"] = hdr;
+			ModSettings.I["hdr_override"] = hdr;
 
 			if (Camera.main != null)
 			{

@@ -72,6 +72,22 @@ namespace Firefly
 
 		// Colors
 		public BodyColors colors = new BodyColors();
+
+		public BodyConfig() { }
+
+		public BodyConfig(BodyConfig template)
+		{
+			this.bodyName = template.bodyName;
+			this.strengthMultiplier = template.strengthMultiplier;
+			this.lengthMultiplier = template.lengthMultiplier;
+			this.opacityMultiplier = template.opacityMultiplier;
+			this.wrapFresnelModifier = template.wrapFresnelModifier;
+			this.particleThreshold = template.particleThreshold;
+			this.streakProbability = template.streakProbability;
+			this.streakThreshold = template.streakThreshold;
+
+			this.colors = template.colors;
+		}
 	}
 
 	public class PlanetPackConfig

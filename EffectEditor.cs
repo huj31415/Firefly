@@ -8,7 +8,7 @@ namespace Firefly
 	{
 		public static EffectEditor Instance { get; private set; }
 
-		public Vector3 effectDirection = Vector3.up;
+		public Vector3 effectDirection = -Vector3.up;
 		public float effectSpeed;
 		public float effectState;
 
@@ -27,12 +27,7 @@ namespace Firefly
 		{
 			Instance = this;
 
-			bodyConfigs = new string[1 + ConfigManager.Instance.bodyConfigs.Count];
-			bodyConfigs[0] = "Default";
-			for (int i = 0; i < ConfigManager.Instance.bodyConfigs.Count; i++)
-			{
-				bodyConfigs[i + 1] = ConfigManager.Instance.bodyConfigs.ElementAt(i).Key;
-			}
+			bodyConfigs = ConfigManager.Instance.bodyConfigs.Keys.ToArray();
 		}
 
 		void ApplyConfig()
@@ -67,6 +62,9 @@ namespace Firefly
 
 			fxModule.doEffectEditor = true;
 			if (!fxModule.isLoaded) fxModule.CreateVesselFx();
+
+			currentBody = bodyConfigs[0];
+			config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
 		}
 
 		public void Gui(int id)
@@ -74,16 +72,22 @@ namespace Firefly
 			GUILayout.BeginVertical();
 
 			// body selection
-			ui_bodyListPosition = GUILayout.BeginScrollView(ui_bodyListPosition);
-			int newChoice = GUILayout.SelectionGrid(ui_bodyChoice, bodyConfigs, Mathf.Min(bodyConfigs.Length, 3), GUILayout.Width(300f));
+			ui_bodyListPosition = GUILayout.BeginScrollView(ui_bodyListPosition, GUILayout.Width(300f), GUILayout.Height(100f));
+			int newChoice = GUILayout.SelectionGrid(ui_bodyChoice, bodyConfigs, Mathf.Min(bodyConfigs.Length, 3));
 
 			if (newChoice != ui_bodyChoice)
 			{
 				ui_bodyChoice = newChoice;
 				currentBody = bodyConfigs[newChoice];
+
+				config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
 			}
 
 			GUILayout.EndScrollView();
+
+			// body configuration
+			GuiUtils.DrawFloatInput("Strength multiplier", ref config.strengthMultiplier);
+			GuiUtils.DrawFloatInput("Length multiplier", ref config.lengthMultiplier);
 
 			// effect configuration
 			effectSpeed = GuiUtils.LabelSlider("Effect strength", effectSpeed, 0f, (float)ModSettings.I["strength_base"]);
@@ -102,6 +106,9 @@ namespace Firefly
 			// 3d
 			Transform camTransform = fxModule.fxVessel.airstreamCamera.transform;
 			if (!fxModule.debugMode) DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.cyan);
+
+			// editor override corrections
+			effectSpeed *= config.strengthMultiplier;
 		}
 
 		public void Close()

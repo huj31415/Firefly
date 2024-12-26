@@ -53,7 +53,7 @@ namespace Firefly
 					{ "disable_debris", new Field(false, ValueType.Boolean, true) },
 					{ "disable_smoke", new Field(false, ValueType.Boolean, true) },
 					{ "strength_base", new Field(2800f, ValueType.Float, false) },
-					{ "length_mult", new Field(1f, ValueType.Float, true) }
+					{ "length_mult", new Field(1f, ValueType.Float, false) }
 				}
 			};
 

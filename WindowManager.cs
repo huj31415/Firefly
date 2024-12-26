@@ -196,7 +196,6 @@ namespace Firefly
 			// drawing
 			GUILayout.BeginVertical();
 
-			GUILayout.Label($"Current vessel loaded? {fxModule.isLoaded}");
 			GUILayout.Label($"Mod version: beta-{Versioning.Version}. This is a testing-only build.");
 			GUILayout.Label($"All assets loaded? {AssetLoader.Instance.allAssetsLoaded}");
 			GUILayout.Space(20);
@@ -207,13 +206,7 @@ namespace Firefly
 			GUILayout.Label($"Final entry speed is {fxModule.GetAdjustedEntrySpeed()}");
 			GUILayout.Space(20);
 
-			GUILayout.Label($"AeroFX scalar is {fxModule.AeroFX.FxScalar}");
-			GUILayout.Label($"AeroFX state is {fxModule.AeroFX.state}");
-			GUILayout.Label($"AeroFX airspeed is {fxModule.AeroFX.airSpeed}");
-			GUILayout.Space(20);
-
 			GUILayout.Label($"Current config is {fxModule.currentBody.bodyName}");
-			GUILayout.Space(20);
 
 			// end
 			GUILayout.EndVertical();

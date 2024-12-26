@@ -272,7 +272,7 @@ namespace Firefly
 					if (overrideColor.shockwave.HasValue) colors.shockwave = overrideColor.shockwave;
 				}
 
-				// is asteroid?
+				// is asteroid? if yes set randomness factor to 1, so the shader draws colored streaks
 				float randomnessFactor = 0f;
 				if (envelope.partName == "PotatoRoid" || envelope.partName == "PotatoComet")
 				{
@@ -703,14 +703,7 @@ namespace Firefly
 				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
 				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-				fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
-				fxVessel.material.SetFloat("_FxState", doEffectEditor ? editor.effectState : AeroFX.state);
-				fxVessel.material.SetFloat("_AngleOfAttack", doEffectEditor ? 0f : Utils.GetAngleOfAttack(vessel));
-				fxVessel.material.SetFloat("_ShadowPower", 0f);
-				fxVessel.material.SetFloat("_VelDotPower", 0f);
-				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
-
-				fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.I["disable_bowshock"] ? 1 : 0);
+				UpdateMaterialProperties();
 			}
 
 			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so
@@ -789,7 +782,6 @@ namespace Firefly
 
 				currentBody = cfg;
 				fxVessel.lengthMultiplier = GetLengthMultiplier();
-				UpdateStaticMaterialProperties();
 				
 				if (!atLoad)
 				{
@@ -802,10 +794,19 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Updates the static material properties
+		/// Updates the material properties
 		/// </summary>
-		void UpdateStaticMaterialProperties()
+		void UpdateMaterialProperties()
 		{
+			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
+			fxVessel.material.SetFloat("_FxState", doEffectEditor ? EffectEditor.Instance.effectState : AeroFX.state);
+			fxVessel.material.SetFloat("_AngleOfAttack", doEffectEditor ? 0f : Utils.GetAngleOfAttack(vessel));
+			fxVessel.material.SetFloat("_ShadowPower", 0f);
+			fxVessel.material.SetFloat("_VelDotPower", 0f);
+			fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+
+			fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.I["disable_bowshock"] ? 1 : 0);
+
 			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
 			fxVessel.material.SetFloat("_OpacityMultiplier", currentBody.opacityMultiplier);
 			fxVessel.material.SetFloat("_WrapFresnelModifier", currentBody.wrapFresnelModifier);

@@ -53,5 +53,17 @@ namespace Firefly
 
 			return v;
 		}
+
+		public static void DrawFloatInput(string label, ref float value)
+		{
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(label);
+
+			string text = GUILayout.TextField(((float)value).ToString());
+			bool hasValue = float.TryParse(text, out float v);
+			if (hasValue) value = v;
+
+			GUILayout.EndHorizontal();
+		}
 	}
 }

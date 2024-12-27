@@ -86,7 +86,7 @@ namespace Firefly
 			this.streakProbability = template.streakProbability;
 			this.streakThreshold = template.streakThreshold;
 
-			this.colors = template.colors;
+			this.colors = new BodyColors(template.colors);
 		}
 	}
 

@@ -202,8 +202,7 @@ namespace Firefly
 
 			GUILayout.Label($"Active vessel is {vessel.vesselName}");
 			GUILayout.Label($"Vessel radius is {fxModule.fxVessel.vesselBoundRadius}");
-			GUILayout.Label($"Effect length multiplier is {fxModule.fxVessel.lengthMultiplier}");
-			GUILayout.Label($"Final entry speed is {fxModule.GetAdjustedEntrySpeed()}");
+			if (!fxModule.doEffectEditor) GUILayout.Label($"Entry strength is {fxModule.GetAdjustedEntrySpeed()}");
 			GUILayout.Space(20);
 
 			GUILayout.Label($"Current config is {fxModule.currentBody.bodyName}");

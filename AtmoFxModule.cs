@@ -73,7 +73,7 @@ namespace Firefly
 		public float vesselBoundRadius;
 		public float vesselMaxSize;
 
-		public float lengthMultiplier = 1f;
+		public float baseLengthMultiplier = 1f;
 
 		public Material material;
 	}
@@ -571,17 +571,19 @@ namespace Firefly
 			Vector3 direction = doEffectEditor ? EffectEditor.Instance.effectDirection : vessel.transform.InverseTransformDirection(GetEntryVelocity());
 			Vector3 worldVel = doEffectEditor ? -EffectEditor.Instance.GetWorldDirection() : -GetEntryVelocity();
 
+			float lengthMultiplier = GetLengthMultiplier();
+
 			// sparks	
-			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * fxVessel.lengthMultiplier;
+			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * lengthMultiplier;
 
 			// chunks
-			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * fxVessel.lengthMultiplier;
+			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * lengthMultiplier;
 
 			// alternate chunks
-			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * fxVessel.lengthMultiplier;
+			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * lengthMultiplier;
 
 			// smoke
-			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
+			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);
@@ -684,7 +686,7 @@ namespace Firefly
 
 				EffectEditor editor = EffectEditor.Instance;
 
-				float entrySpeed = doEffectEditor ? editor.effectSpeed : GetAdjustedEntrySpeed();
+				float entrySpeed = doEffectEditor ? (editor.effectSpeed * currentBody.strengthMultiplier) : GetAdjustedEntrySpeed();
 
 				// update particle stuff like strength and direction
 				if (fxVessel.hasParticles) UpdateParticleSystems();
@@ -781,7 +783,6 @@ namespace Firefly
 				ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
 
 				currentBody = cfg;
-				fxVessel.lengthMultiplier = GetLengthMultiplier();
 				
 				if (!atLoad)
 				{
@@ -807,7 +808,7 @@ namespace Firefly
 
 			fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.I["disable_bowshock"] ? 1 : 0);
 
-			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
+			fxVessel.material.SetFloat("_LengthMultiplier", GetLengthMultiplier());
 			fxVessel.material.SetFloat("_OpacityMultiplier", currentBody.opacityMultiplier);
 			fxVessel.material.SetFloat("_WrapFresnelModifier", currentBody.wrapFresnelModifier);
 
@@ -889,6 +890,8 @@ namespace Firefly
 			fxVessel.vesselBoundExtents = vesselSize / 2f;
 			fxVessel.vesselBoundRadius = fxVessel.vesselBoundExtents.magnitude;
 
+			CalculateBaseLengthMultiplier();  // done after calculating bounds
+
 			return true;
 		}
 
@@ -919,9 +922,9 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Calculates the speed multiplier
+		/// Calculates the base length multiplier, with the vessel's radius
 		/// </summary>
-		float GetLengthMultiplier()
+		void CalculateBaseLengthMultiplier()
 		{
 			// the Apollo capsule has a radius of around 2, which makes it a good reference
 			float baseRadius = fxVessel.vesselBoundRadius / 2f;
@@ -929,9 +932,15 @@ namespace Firefly
 			// gets the final result
 			// for example, if the base radius is 2 then the result will be 1.4
 			// or if the base radius is 3 then the result will be 1.8
-			float result = 1f + (baseRadius - 1f) * 0.3f;
+			fxVessel.baseLengthMultiplier = 1f + (baseRadius - 1f) * 0.3f;
+		}
 
-			return result * currentBody.lengthMultiplier * (float)ModSettings.I["length_mult"];
+		/// <summary>
+		/// Calculates the length multiplier based on the base multiplier and current body config
+		/// </summary>
+		float GetLengthMultiplier()
+		{
+			return fxVessel.baseLengthMultiplier * currentBody.lengthMultiplier * (float)ModSettings.I["length_mult"];
 		}
 
 		/// <summary>

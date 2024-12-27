@@ -63,7 +63,8 @@ namespace Firefly
 			fxModule.doEffectEditor = true;
 			if (!fxModule.isLoaded) fxModule.CreateVesselFx();
 
-			currentBody = bodyConfigs[0];
+			ui_bodyChoice = bodyConfigs.IndexOf(fxModule.currentBody.bodyName);
+			currentBody = fxModule.currentBody.bodyName;
 			config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
 		}
 
@@ -81,6 +82,8 @@ namespace Firefly
 				currentBody = bodyConfigs[newChoice];
 
 				config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
+
+				fxModule.ReloadVessel();
 			}
 
 			GUILayout.EndScrollView();
@@ -89,7 +92,7 @@ namespace Firefly
 			GuiUtils.DrawFloatInput("Strength multiplier", ref config.strengthMultiplier);
 			GuiUtils.DrawFloatInput("Length multiplier", ref config.lengthMultiplier);
 
-			// effect configuration
+			// sim configuration
 			effectSpeed = GuiUtils.LabelSlider("Effect strength", effectSpeed, 0f, (float)ModSettings.I["strength_base"]);
 			effectState = GuiUtils.LabelSlider("Effect state", effectState, 0f, 1f);
 
@@ -107,13 +110,15 @@ namespace Firefly
 			Transform camTransform = fxModule.fxVessel.airstreamCamera.transform;
 			if (!fxModule.debugMode) DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.cyan);
 
-			// editor override corrections
-			effectSpeed *= config.strengthMultiplier;
+			// apply stuff
+			fxModule.currentBody = config;
 		}
 
 		public void Close()
 		{
 			fxModule.doEffectEditor = false;
+
+			fxModule.currentBody = ConfigManager.Instance.bodyConfigs[currentBody];
 		}
 	}
 }

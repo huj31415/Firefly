@@ -11,11 +11,9 @@ namespace Firefly
 		public static WindowManager Instance { get; private set; }
 
 		ApplicationLauncherButton appButton;
-		Rect settingsWindowPosition = new Rect(600, 100, 300, 100);
 		Rect windowPosition = new Rect(0, 100, 300, 100);
-		Rect infoWindowPosition = new Rect(300, 100, 300, 100);
 
-		bool uiHidden = false;
+		public bool uiHidden = false;
 		bool appToggle = false;
 
 		// override toggle values
@@ -26,7 +24,7 @@ namespace Firefly
 
 		// effect editor
 		EffectEditor effectEditor;
-		Rect effectEditorPosition = new Rect(900, 100, 300, 100);
+		Rect effectEditorPosition = new Rect(300, 100, 300, 100);
 		bool effectEditorActive = false;
 		
 		public void Awake()
@@ -89,20 +87,80 @@ namespace Firefly
 		{
 			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
 
-			settingsWindowPosition = GUILayout.Window(511, settingsWindowPosition, OnSettingsWindow, "Firefly Settings");
-			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, "Quick actions");
-			infoWindowPosition = GUILayout.Window(410, infoWindowPosition, OnInfoWindow, "Info");
+			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, $"Firefly {Versioning.Version}");
 
 			if (effectEditorActive) effectEditorPosition = GUILayout.Window(512, effectEditorPosition, effectEditor.Gui, "Effect editor");
+			if (effectEditorActive) effectEditor.colorPicker.Gui();
 		}
 
 		/// <summary>
-		/// Config and override window
+		/// Window
 		/// </summary>
-		void OnSettingsWindow(int id)
+		void OnWindow(int id)
 		{
-			// drawing
+			// effect editor
+			if (GUILayout.Button($"{(effectEditorActive ? "Close" : "Open")} effect editor"))
+			{
+				effectEditorActive = !effectEditorActive;
+				if (effectEditorActive) effectEditor.Open();
+				else effectEditor.Close();
+			}
+
+			// settings
+			DrawSettings();
+			GUILayout.Space(40);
+
+			// init vessel and module
+			Vessel vessel = FlightGlobals.ActiveVessel;
+			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
+			if (fxModule == null) return;
+
+			if (!fxModule.isLoaded)
+			{
+				GUILayout.BeginVertical();
+				GUILayout.Label("FX are not loaded for the active vessel");
+				GUILayout.Label("Not showing info and quick action sections");
+				GUILayout.EndVertical();
+				GUI.DragWindow();
+				return;
+			}
+
+			// info
+			DrawInfo(vessel, fxModule);
+			GUILayout.Space(40);
+
+			// quick actions
+			DrawQuickActions(fxModule);
+
+			// end
+			GUI.DragWindow();
+		}
+
+		/// <summary>
+		/// Mod and vessel info
+		/// </summary>
+		/// <param name="fxModule"></param>
+		void DrawInfo(Vessel vessel, AtmoFxModule fxModule)
+		{
 			GUILayout.BeginVertical();
+			GUILayout.Label("Info:");
+
+			GUILayout.Label($"All assets loaded? {AssetLoader.Instance.allAssetsLoaded}");
+			GUILayout.Label($"Current config is {fxModule.currentBody.bodyName}");
+			GUILayout.Label($"Active vessel is {vessel.vesselName}");
+			GUILayout.Label($"Vessel radius is {fxModule.fxVessel.vesselBoundRadius}");
+			if (!fxModule.doEffectEditor) GUILayout.Label($"Entry strength is {fxModule.GetAdjustedEntrySpeed()}");
+
+			GUILayout.EndVertical();
+		}
+
+		/// <summary>
+		/// Config and override
+		/// </summary>
+		void DrawSettings()
+		{
+			GUILayout.BeginVertical();
+			GUILayout.Label("Settings:");
 
 			GUILayout.Label("Fields that need a reload to update are marked with *");
 
@@ -115,44 +173,18 @@ namespace Firefly
 				else if (field.Value.valueType == ModSettings.ValueType.Float) GuiUtils.DrawConfigFieldFloat(field.Key, ModSettings.I.fields);
 			}
 
-			GUILayout.Space(20);
 			if (GUILayout.Button("Save overrides to file")) SettingsManager.Instance.SaveModSettings();
 
-			GUILayout.Space(20);
-			if (GUILayout.Button($"{(effectEditorActive ? "Close" : "Open")} effect editor"))
-			{
-				effectEditorActive = !effectEditorActive;
-				if (effectEditorActive) effectEditor.Open();
-				else effectEditor.Close();
-			}
-
-			// end
 			GUILayout.EndVertical();
-			GUI.DragWindow();
 		}
-
+		
 		/// <summary>
-		/// Quick actions window
+		/// Quick actions
 		/// </summary>
-		void OnWindow(int id)
+		void DrawQuickActions(AtmoFxModule fxModule)
 		{
-			// init
-			Vessel vessel = FlightGlobals.ActiveVessel;
-			if (vessel == null) return;
-			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
-			if (fxModule == null) return;
-
-			if (!fxModule.isLoaded)
-			{
-				GUILayout.BeginVertical();
-				GUILayout.Label("FX are not loaded for the active vessel");
-				GUILayout.EndVertical();
-				GUI.DragWindow();
-				return;
-			}
-
-			// drawing
 			GUILayout.BeginVertical();
+			GUILayout.Label("Quick actions:");
 
 			bool canReload = (Time.realtimeSinceStartup - reloadBtnTime) > 1f;
 			if (GUILayout.Button("Reload Vessel") && canReload)
@@ -160,56 +192,11 @@ namespace Firefly
 				fxModule.ReloadVessel();
 				reloadBtnTime = Time.realtimeSinceStartup;
 			}
-			
-			GUILayout.Space(20);
 			if (GUILayout.Button($"Toggle effects {(tgl_EffectToggle ? "(TURN OFF)" : "(TURN ON)")}")) tgl_EffectToggle = !tgl_EffectToggle;
 			if (GUILayout.Button($"Toggle debug vis {(fxModule.debugMode ? "(TURN OFF)" : "(TURN ON)")}")) fxModule.debugMode = !fxModule.debugMode;
+			if (Versioning.IsDev && GUILayout.Button("Reload assetbundle")) AssetLoader.Instance.ReloadAssets();
 
-			GUILayout.Space(20);
-			if (GUILayout.Button("Reload assetbundle")) AssetLoader.Instance.ReloadAssets();
-
-			// end
 			GUILayout.EndVertical();
-			GUI.DragWindow();
-		}
-
-		/// <summary>
-		/// Info window
-		/// </summary>
-		void OnInfoWindow(int id)
-		{
-			// init
-			Vessel vessel = FlightGlobals.ActiveVessel;
-			if (vessel == null) return;
-			var fxModule = vessel.FindVesselModuleImplementing<AtmoFxModule>();
-			if (fxModule == null) return;
-
-			if (!fxModule.isLoaded)
-			{
-				GUILayout.BeginVertical();
-				GUILayout.Label("FX are not loaded for the active vessel");
-				GUILayout.EndVertical();
-				GUI.DragWindow();
-				return;
-			}
-
-			// drawing
-			GUILayout.BeginVertical();
-
-			GUILayout.Label($"Mod version: beta-{Versioning.Version}. This is a testing-only build.");
-			GUILayout.Label($"All assets loaded? {AssetLoader.Instance.allAssetsLoaded}");
-			GUILayout.Space(20);
-
-			GUILayout.Label($"Active vessel is {vessel.vesselName}");
-			GUILayout.Label($"Vessel radius is {fxModule.fxVessel.vesselBoundRadius}");
-			if (!fxModule.doEffectEditor) GUILayout.Label($"Entry strength is {fxModule.GetAdjustedEntrySpeed()}");
-			GUILayout.Space(20);
-
-			GUILayout.Label($"Current config is {fxModule.currentBody.bodyName}");
-
-			// end
-			GUILayout.EndVertical();
-			GUI.DragWindow();
 		}
 	}
 }

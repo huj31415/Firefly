@@ -225,7 +225,7 @@ namespace Firefly
 		/// <summary>
 		/// Initializes the CommandBuffer for the vessel, and adds it to the cameras
 		/// </summary>
-		void InitializeCommandBuffer()
+		public void InitializeCommandBuffer()
 		{
 			fxVessel.commandBuffer = new CommandBuffer();
 			fxVessel.commandBuffer.name = $"Firefly atmospheric effects [{vessel.vesselName}]";
@@ -236,7 +236,7 @@ namespace Firefly
 		/// <summary>
 		/// Populates the command buffer with the envelope
 		/// </summary>
-		void PopulateCommandBuffer()
+		public void PopulateCommandBuffer()
 		{
 			fxVessel.commandBuffer.Clear();
 
@@ -303,7 +303,7 @@ namespace Firefly
 		/// <summary>
 		/// Destroys and disposes the command buffer
 		/// </summary>
-		void DestroyCommandBuffer()
+		public void DestroyCommandBuffer()
 		{
 			CameraManager.Instance.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
 			fxVessel.commandBuffer.Dispose();
@@ -780,9 +780,14 @@ namespace Firefly
 			{
 				Logging.Log($"Updating current body for {vessel.name}");
 
-				ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
-
-				currentBody = cfg;
+				if (!doEffectEditor)
+				{
+					ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
+					currentBody = cfg;
+				} else
+				{
+					currentBody = EffectEditor.Instance.config;
+				}
 				
 				if (!atLoad)
 				{

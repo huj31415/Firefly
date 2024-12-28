@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Firefly
 {
@@ -23,11 +21,15 @@ namespace Firefly
 
 			public bool needsReload;
 
+			public string uiText;
+
 			public Field(object value, ValueType valueType, bool needsReload)
 			{
 				this.value = value;
 				this.valueType = valueType;
 				this.needsReload = needsReload;
+
+				this.uiText = value.ToString();
 			}
 		}
 

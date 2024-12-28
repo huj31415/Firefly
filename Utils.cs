@@ -155,5 +155,21 @@ namespace Firefly
 
 			return corners;
 		}
+
+		/// <summary>
+		/// Returns a Color from HSV values
+		/// </summary>
+		public static Color ColorHSV(float h, float s, float v)
+		{
+			return Color.HSVToRGB(h, s, v);
+		}
+
+		/// <summary>
+		/// Returns HSV from a color
+		/// </summary>
+		public static void ColorHSV(Color c, out float h, out float s, out float v)
+		{
+			Color.RGBToHSV(c, out h, out s, out v);
+		}
 	}
 }

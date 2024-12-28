@@ -4,17 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static ProceduralSpaceObject;
 
 namespace Firefly
 {
 	internal class GuiUtils
 	{
-		/// <summary>
-		/// Draws a config field with a toggle switch
-		/// </summary>
-		/// <param name="label">Label to show</param>
-		/// <param name="tgl">The dict contatining the toggle values</param>
-		/// <returns>The apply button state</returns>
 		public static void DrawConfigFieldBool(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
 			string needsReload = tgl[label].needsReload ? "*" : "";
@@ -22,12 +17,6 @@ namespace Firefly
 			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label + needsReload);
 		}
 
-		/// <summary>
-		/// Draws a config field with a number input
-		/// </summary>
-		/// <param name="label">Label to show</param>
-		/// <param name="tgl">The dict contatining the toggle values</param>
-		/// <returns>The apply button state</returns>
 		public static void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
 			string needsReload = tgl[label].needsReload ? "*" : "";
@@ -35,8 +24,8 @@ namespace Firefly
 			GUILayout.BeginHorizontal();
 			GUILayout.Label(label + needsReload);
 
-			string text = GUILayout.TextField(((float)tgl[label].value).ToString());
-			bool hasValue = float.TryParse(text, out float value);
+			tgl[label].uiText = GUILayout.TextField(tgl[label].uiText);
+			bool hasValue = float.TryParse(tgl[label].uiText, out float value);
 			if (hasValue) tgl[label].value = value;
 
 			GUILayout.EndHorizontal();
@@ -54,16 +43,32 @@ namespace Firefly
 			return v;
 		}
 
-		public static void DrawFloatInput(string label, ref float value)
+		public static void DrawFloatInput(string label, ref string text, ref float value, params GUILayoutOption[] layoutOptions)
 		{
-			GUILayout.BeginHorizontal();
+			GUILayout.BeginHorizontal(layoutOptions);
 			GUILayout.Label(label);
 
-			string text = GUILayout.TextField(((float)value).ToString());
+			text = GUILayout.TextField(text);
 			bool hasValue = float.TryParse(text, out float v);
 			if (hasValue) value = v;
 
 			GUILayout.EndHorizontal();
+		}
+
+		public static bool GetRectPoint(Vector2 point, Rect rect, out Vector2 result)
+		{
+			if (rect.Contains(point))
+			{
+				result = new Vector2(
+					Mathf.Clamp(point.x - rect.xMin, 0f, rect.width),
+					rect.width - Mathf.Clamp(point.y - rect.yMin, 0f, rect.height)
+				);
+
+				return true;
+			}
+
+			result = Vector2.zero;
+			return false;
 		}
 	}
 }

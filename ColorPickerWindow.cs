@@ -13,15 +13,18 @@ namespace Firefly
 		public string title;
 		public bool show;
 
+		float intensity;
 		float h, s, v;
 		Color color;
 
-		bool rgbMode;
-		float[] raw = new float[3];
-		string[] ui_raw = new string[3];
-		Texture2D[] sliderTex = new Texture2D[3];
-		Rect[] sliderRects = new Rect[3];
+		// sliders
+		bool rgbMode = false;
+		float[] raw = new float[4];
+		string[] ui_raw = new string[4];
+		Texture2D[] sliderTex = new Texture2D[4];
+		Rect[] sliderRects = new Rect[4];
 
+		// selectors and textures
 		Rect hueBarRect;
 		Rect pickerRect;
 		Texture2D pickerTex;
@@ -30,6 +33,7 @@ namespace Firefly
 		Texture2D hueSelectorTex;
 		Texture2D pickerSelectorTex;
 
+		// pick state
 		bool isPicking;
 		float pickTimer;
 
@@ -48,9 +52,8 @@ namespace Firefly
 			hueSelectorTex = TextureUtils.GenerateSelectorTexture(3, 24, 1, Color.white, Color.black);
 			pickerSelectorTex = TextureUtils.GenerateSelectorTexture(3, 3, 1, Color.white, Color.black);
 
-			sliderTex[0] = TextureUtils.GenerateHueTexture(120, 20);
-			sliderTex[1] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, 0f, v), Utils.ColorHSV(h, 1f, v));
-			sliderTex[2] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, s, 0f), Utils.ColorHSV(h, s, 1f));
+			GenerateSliderTextures();
+			sliderTex[3] = TextureUtils.GenerateGradientTexture(120, 20, Color.black, Color.white);
 		}
 
 		public void Gui()
@@ -74,18 +77,22 @@ namespace Firefly
 			GUILayout.Space(20);
 
 			DrawSliders();
-			GUILayout.Space(20);
-
-			DrawCloseButton();
+			DrawBottomControls();
 
 			GUILayout.EndVertical();
 
+			// after drawing handle input
 			HandleInput();
 		}
 
-		void DrawCloseButton()
+		void DrawBottomControls()
 		{
-			GUILayout.Button("Save and close");
+			bool previousRgb = rgbMode;
+			rgbMode = GUILayout.Toggle(rgbMode, "RGB mode");
+			if (previousRgb != rgbMode) OnRGBToggle();
+
+			GUILayout.Space(20);
+			if (GUILayout.Button("Save and close")) show = false;
 		}
 
 		void DrawColor()
@@ -118,12 +125,13 @@ namespace Firefly
 
 		void DrawSliders()
 		{
-			DrawColorSlider("H", 0);
-			DrawColorSlider("S", 1);
-			DrawColorSlider("V", 2);
+			DrawColorSlider(rgbMode ? "R" : "H", 0, true);
+			DrawColorSlider(rgbMode ? "G" : "S", 1, true);
+			DrawColorSlider(rgbMode ? "B" : "V", 2, true);
+			DrawColorSlider("I", 3, false);  // HDR intensity
 		}
 
-		void DrawColorSlider(string label, int index)
+		void DrawColorSlider(string label, int index, bool isColor)
 		{
 			GUILayout.BeginHorizontal();
 
@@ -144,10 +152,18 @@ namespace Firefly
 			bool hasValue = float.TryParse(newText, out float v);
 			if (newText != ui_raw[index] && hasValue)  // only set the value if it changed and if it's a correct float
 			{
-				float clamped = Mathf.Clamp(v, 0f, 255f);
-				ui_raw[index] = $"{clamped:F0}";  // display the value as an int
-				raw[index] = clamped / 255f;
-
+				if (isColor)
+				{
+					float clamped = Mathf.Clamp(v, 0f, 255f);
+					ui_raw[index] = $"{clamped:F0}";  // display the value as an int
+					raw[index] = clamped / 255f;
+				} else
+				{
+					// HDR intensity slider
+					raw[index] = Mathf.Clamp(v, 0f, 5f);
+					ui_raw[index] = $"{raw[index]:F4}";
+				}
+				
 				OnSliderChange();
 			}
 
@@ -187,7 +203,7 @@ namespace Firefly
 
 		void HandleSliderInput(Vector2 mouse)
 		{
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < 4; i++)
 			{
 				bool inBar = GuiUtils.GetRectPoint(mouse, sliderRects[i], out Vector2 clickPoint);
 				if (!inBar) continue;
@@ -230,125 +246,80 @@ namespace Firefly
 			color = Utils.ColorHSV(h, s, v);
 			colorTex = TextureUtils.GenerateColorTexture(1, 1, color);
 
-			// update slider textures
-			sliderTex[0] = TextureUtils.GenerateHueTexture(120, 20);
-			sliderTex[1] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, 0f, v), Utils.ColorHSV(h, 1f, v));
-			sliderTex[2] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, s, 0f), Utils.ColorHSV(h, s, 1f));
-
 			// update sliders
-			raw[0] = h;
-			raw[1] = s;
-			raw[2] = v;
+			if (rgbMode)
+			{
+				raw[0] = color.r;
+				raw[1] = color.g;
+				raw[2] = color.b;
+			}
+			else
+			{
+				raw[0] = h;
+				raw[1] = s;
+				raw[2] = v;
+			}
+
+			// update slider textures
+			GenerateSliderTextures();
 			
 			// update text fields
-			ui_raw[0] = $"{(h * 255f):F0}";
-			ui_raw[1] = $"{(s * 255f):F0}";
-			ui_raw[2] = $"{(v * 255f):F0}";
+			ui_raw[0] = $"{(raw[0] * 255f):F0}";
+			ui_raw[1] = $"{(raw[1] * 255f):F0}";
+			ui_raw[2] = $"{(raw[2] * 255f):F0}";
 		}
 
 		void OnSliderChange()
 		{
 			// update color
-			h = raw[0];
-			s = raw[1];
-			v = raw[2];
+			if (rgbMode)
+			{
+				Utils.ColorHSV(new Color(raw[0], raw[1], raw[2]), out h, out s, out v);
+			} else
+			{
+				h = raw[0];
+				s = raw[1];
+				v = raw[2];
+			}
+
+			// update intensity
+			intensity = raw[3];
 
 			pickerTex = TextureUtils.GenerateGradientTexture(pickerSize, pickerSize, h);
 			UpdateColor();
 		}
-	}
 
-	internal class TextureUtils
-	{
-		public static Texture2D GenerateHueTexture(int width, int height)
+		void OnRGBToggle()
 		{
-			Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false, false);
-
-			Color c;
-			for (int x = 0; x < width; x++)
+			if (rgbMode)
 			{
-				c = Utils.ColorHSV((float)x / (float)width, 1f, 1f);
-				for (int y = 0; y < height; y++)
-				{
-					tex.SetPixel(x, y, c);
-				}
+				raw[0] = color.r;
+				raw[1] = color.g;
+				raw[2] = color.b;
+			}
+			else
+			{
+				raw[0] = h;
+				raw[1] = s;
+				raw[2] = v;
 			}
 
-			tex.Apply();
-			return tex;
+			OnSliderChange();
 		}
-
-		public static Texture2D GenerateGradientTexture(int width, int height, Color c1, Color c2)
+		
+		void GenerateSliderTextures()
 		{
-			Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false, false);
-
-			Color c;
-			for (int x = 0; x < width; x++)
+			if (rgbMode)
 			{
-				c = Color.Lerp(c1, c2, (float)x / (float)width);
-				for (int y = 0; y < height; y++)
-				{
-					tex.SetPixel(x, y, c);
-				}
-			}
-
-			tex.Apply();
-			return tex;
-		}
-
-		public static Texture2D GenerateGradientTexture(int width, int height, float hue)
-		{
-			Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false, false);
-
-			Color c;
-			for (int x = 0; x < width; x++)
+				sliderTex[0] = TextureUtils.GenerateGradientTexture(100, 20, new Color(0f, color.g, color.b), new Color(1f, color.g, color.b));
+				sliderTex[1] = TextureUtils.GenerateGradientTexture(100, 20, new Color(color.r, 0f, color.b), new Color(color.r, 1f, color.b));
+				sliderTex[2] = TextureUtils.GenerateGradientTexture(100, 20, new Color(color.r, color.g, 0f), new Color(color.r, color.g, 1f));
+			} else
 			{
-				for (int y = 0; y < height; y++)
-				{
-					c = Utils.ColorHSV(hue, (float)x / (float)width, (float)y / (float)height);
-					tex.SetPixel(x, y, c);
-				}
+				sliderTex[0] = TextureUtils.GenerateHueTexture(100, 20, s, v);
+				sliderTex[1] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, 0f, v), Utils.ColorHSV(h, 1f, v));
+				sliderTex[2] = TextureUtils.GenerateGradientTexture(100, 20, Utils.ColorHSV(h, s, 0f), Utils.ColorHSV(h, s, 1f));
 			}
-
-			tex.Apply();
-			return tex;
-		}
-
-		public static Texture2D GenerateColorTexture(int width, int height, Color c)
-		{
-			Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false, false);
-
-			for (int x = 0; x < width; x++)
-			{
-				for (int y = 0; y < height; y++)
-				{
-					tex.SetPixel(x, y, c);
-				}
-			}
-
-			tex.Apply();
-			return tex;
-		}
-
-		public static Texture2D GenerateSelectorTexture(int width, int height, int border, Color insideColor, Color color)
-		{
-			Texture2D tex = new Texture2D(width, height, TextureFormat.ARGB32, false, false);
-
-			Color c;
-			for (int x = 0; x < width; x++)
-			{
-				for (int y = 0; y < height; y++)
-				{
-					if (x < border || x > width - 1 - border) c = color;
-					else if (y < border || y > height - 1 - border) c = color;
-					else c = insideColor;
-
-					tex.SetPixel(x, y, c);
-				}
-			}
-
-			tex.Apply();
-			return tex;
 		}
 	}
 }

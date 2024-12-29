@@ -70,5 +70,21 @@ namespace Firefly
 			result = Vector2.zero;
 			return false;
 		}
+
+		public static bool DrawColorButton(string label, Texture2D pix, Color color)
+		{
+			GUILayout.BeginHorizontal();
+
+			GUILayout.Label(label);
+
+			bool b = GUILayout.Button("", GUILayout.Width(60), GUILayout.Height(20));
+			Rect rect = GUILayoutUtility.GetLastRect();
+			rect = new Rect(rect.x + 4, rect.y + 4, rect.width - 8, rect.height - 8);
+			GUI.DrawTexture(rect, pix, ScaleMode.StretchToFill, false, 0f, color, 0f, 0f);
+
+			GUILayout.EndHorizontal();
+
+			return b;
+		}
 	}
 }

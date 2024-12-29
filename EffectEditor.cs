@@ -31,14 +31,19 @@ namespace Firefly
 
 		public ColorPickerWindow colorPicker;
 
+		// for drawing color buttons
+		Texture2D whitePixel;
+
 		public EffectEditor()
 		{
 			Instance = this;
 
 			bodyConfigs = ConfigManager.Instance.bodyConfigs.Keys.ToArray();
 
-			colorPicker = new ColorPickerWindow("C", 900, 100, Color.red);
-			colorPicker.show = true;
+			colorPicker = new ColorPickerWindow("Color picker", 900, 100, Color.red);
+			colorPicker.show = false;
+
+			whitePixel = TextureUtils.GenerateColorTexture(1, 1, Color.white);
 		}
 
 		void SaveConfig()
@@ -150,6 +155,9 @@ namespace Firefly
 			// body configuration
 			DrawBodyConfiguration();
 
+			// color configuration
+			DrawColorConfiguration();
+
 			// end
 			GUILayout.EndVertical();
 		}
@@ -184,6 +192,32 @@ namespace Firefly
 
 			config.streakProbability = GuiUtils.LabelSlider("Streak probability", config.streakProbability, 0f, 0.09f);
 			config.streakThreshold = GuiUtils.LabelSlider("Streak threshold", config.streakThreshold, 0f, -0.2f);
+		}
+
+		void DrawColorConfiguration()
+		{
+			DrawColorButton("Glow", ref config.colors.glow);
+			DrawColorButton("Hot Glow", ref config.colors.glowHot);
+
+			DrawColorButton("Trail Primary", ref config.colors.trailPrimary);
+			DrawColorButton("Trail Secondary", ref config.colors.trailSecondary);
+			DrawColorButton("Trail Tertiary", ref config.colors.trailTertiary);
+			DrawColorButton("Trail Streak", ref config.colors.trailStreak);
+
+			DrawColorButton("Wrap Layer", ref config.colors.wrapLayer);
+			DrawColorButton("Wrap Streak", ref config.colors.wrapStreak);
+
+			DrawColorButton("Bowshock", ref config.colors.shockwave);
+		}
+
+		void DrawColorButton(string label, ref Color? color)
+		{
+			Color c = (Color)color;
+
+			if (GuiUtils.DrawColorButton(label, whitePixel, c))
+			{
+
+			}
 		}
 
 		void DrawSimConfiguration()

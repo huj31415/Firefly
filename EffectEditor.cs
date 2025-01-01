@@ -147,8 +147,10 @@ namespace Firefly
 			whitePixel = TextureUtils.GenerateColorTexture(1, 1, Color.white);
 		}
 
+		// saves config to cfg file
 		void SaveConfig()
 		{
+			// check state and ask for confirmation
 			if (saveConfigState == 0)
 			{
 				saveConfigText = "Are you sure?";
@@ -156,11 +158,13 @@ namespace Firefly
 				return;
 			}
 
+			// save config to ConfigManager
 			if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
 			else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
 
 			Logging.Log($"Saving body config {currentBody}");
 
+			// decide saving path
 			string path = config.cfgPath;
 			if (!ConfigManager.Instance.loadedBodyConfigs.Contains(currentBody))
 			{
@@ -185,6 +189,7 @@ namespace Firefly
 			saveConfigText = "Save selected to cfg file";
 		}
 
+		// resets the ui input texts
 		void ResetFieldText()
 		{
 			ui_strengthMultiplier = config.strengthMultiplier.ToString();
@@ -194,6 +199,7 @@ namespace Firefly
 			ui_particleThreshold = config.particleThreshold.ToString();
 		}
 
+		// sets the direction to the current camera facing
 		void ApplyCameraDirection()
 		{
 			Vessel vessel = FlightGlobals.ActiveVessel;
@@ -203,6 +209,7 @@ namespace Firefly
 			effectDirection = vessel.transform.InverseTransformDirection(FlightCamera.fetch.mainCamera.transform.forward);
 		}
 
+		// sets the direction to the ship's axis
 		void ApplyShipDirection()
 		{
 			effectDirection = -Vector3.up;
@@ -310,14 +317,17 @@ namespace Firefly
 
 		void DrawConfigSelector()
 		{
+			// draw the scrollview and selection grid with the configs
 			ui_bodyListPosition = GUILayout.BeginScrollView(ui_bodyListPosition, GUILayout.Width(300f), GUILayout.Height(125f));
 			int newChoice = GUILayout.SelectionGrid(ui_bodyChoice, bodyConfigs, Mathf.Min(bodyConfigs.Length, 3));
 
 			if (newChoice != ui_bodyChoice)
 			{
+				// update ConfigManager
 				if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
 				else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
 
+				// reset the config stuff
 				ui_bodyChoice = newChoice;
 				currentBody = bodyConfigs[newChoice];
 
@@ -328,6 +338,12 @@ namespace Firefly
 			}
 
 			GUILayout.EndScrollView();
+		}
+
+		void DrawSimConfiguration()
+		{
+			effectSpeed = GuiUtils.LabelSlider("Effect strength", effectSpeed, 0f, (float)ModSettings.I["strength_base"]);
+			effectState = GuiUtils.LabelSlider("Effect state", effectState, 0f, 1f);
 		}
 
 		void DrawBodyConfiguration()
@@ -358,6 +374,7 @@ namespace Firefly
 			DrawColorButton("Bowshock", "shockwave");
 		}
 
+		// draws a button for a config color
 		void DrawColorButton(string label, string colorKey)
 		{
 			HDRColor c = config.colors[colorKey];
@@ -369,6 +386,7 @@ namespace Firefly
 			}
 		}
 
+		// gets called when the color picker applies a color
 		void OnApplyColor()
 		{
 			config.colors[currentlyPicking] = new HDRColor(colorPicker.color);
@@ -379,20 +397,25 @@ namespace Firefly
 			fxModule.PopulateCommandBuffer();
 		}
 
+		// gets called when the config creation popup confirms creation and closes
 		void OnPopupSave()
 		{
+			// update ConfigManager
 			if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
 			else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
 
+			// get the new config from the selected template
 			config = new BodyConfig(ConfigManager.Instance.bodyConfigs[createConfigPopup.selectedTemplate]);
 			currentBody = createConfigPopup.selectedName;
 			config.bodyName = currentBody;
 
+			// create a new config array and update ConfigManager's one
 			string[] newBodyArray = new string[bodyConfigs.Length + 1];
 			bodyConfigs.CopyTo(newBodyArray, 0);
 			newBodyArray[bodyConfigs.Length] = currentBody;
 			ConfigManager.Instance.bodyConfigs.Add(currentBody, new BodyConfig(config));
 
+			// reset the current body stuff
 			ui_bodyChoice = bodyConfigs.Length;
 
 			bodyConfigs = newBodyArray;
@@ -404,6 +427,7 @@ namespace Firefly
 
 		void RemoveSelectedConfig()
 		{
+			// ask for confirmation
 			if (removeConfigState == 0)
 			{
 				removeConfigText = "Are you sure?";
@@ -425,12 +449,6 @@ namespace Firefly
 			// reset state
 			removeConfigText = "Remove selected config";
 			removeConfigState = 0;
-		}
-
-		void DrawSimConfiguration()
-		{
-			effectSpeed = GuiUtils.LabelSlider("Effect strength", effectSpeed, 0f, (float)ModSettings.I["strength_base"]);
-			effectState = GuiUtils.LabelSlider("Effect state", effectState, 0f, 1f);
 		}
 	}
 }

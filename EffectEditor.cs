@@ -369,7 +369,7 @@ namespace Firefly
 			GuiUtils.DrawFloatInput("Particle threshold", ref ui_particleThreshold, ref config.particleThreshold);
 
 			config.streakProbability = GuiUtils.LabelSlider("Streak probability", config.streakProbability, 0f, 0.09f);
-			config.streakThreshold = GuiUtils.LabelSlider("Streak threshold", config.streakThreshold, 0f, -0.2f);
+			config.streakThreshold = GuiUtils.LabelSlider("Streak threshold", config.streakThreshold, 0f, -0.5f);
 		}
 
 		void DrawColorConfiguration()

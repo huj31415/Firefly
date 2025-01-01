@@ -276,11 +276,11 @@ namespace Firefly
 			if (!fxModule.debugMode) DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.cyan);
 
 			// timed gui states
-			if ((Time.time - saveConfigStateTimer) >= 8f && saveConfigState == 1)
+			if ((Time.time - saveConfigStateTimer) >= 4f && saveConfigState == 1)
 			{
 				ResetSaveConfigState();
 			}
-			if ((Time.time - removeConfigStateTimer) >= 8f && removeConfigState == 1)
+			if ((Time.time - removeConfigStateTimer) >= 4f && removeConfigState == 1)
 			{
 				ResetRemoveConfigState();
 			}

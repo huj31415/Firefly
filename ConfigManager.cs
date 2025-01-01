@@ -254,6 +254,7 @@ namespace Firefly
 			}
 
 			// get the nodes
+			// here we're using the UrlConfig stuff, to be able to get the path of the config
 			UrlDir.UrlConfig[] urlConfigs = GameDatabase.Instance.GetConfigs("ATMOFX_BODY");
 
 			// check if there's actually anything to load

@@ -123,6 +123,7 @@ namespace Firefly
 		string ui_wrapFresnelModifier;
 		string ui_particleThreshold;
 
+		// dialog windows
 		public ColorPickerWindow colorPicker;
 		string currentlyPicking;
 

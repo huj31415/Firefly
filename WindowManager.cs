@@ -89,6 +89,7 @@ namespace Firefly
 
 			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, $"Firefly {Versioning.Version}");
 
+			// draw the effect editor and its dialogs
 			if (effectEditorActive) effectEditorPosition = GUILayout.Window(512, effectEditorPosition, effectEditor.Gui, "Effect editor");
 			if (effectEditorActive) effectEditor.colorPicker.Gui();
 			if (effectEditorActive) effectEditor.createConfigPopup.Gui();

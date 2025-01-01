@@ -21,28 +21,33 @@ namespace Firefly
 
 	public static class Utils
 	{
+		// parses a float
 		public static bool EvaluateFloat(string text, out float val)
 		{
 			return float.TryParse(text, out val);
 		}
 
+		// parses a boolean
 		public static bool EvaluateBool(string text, out bool val)
 		{
 			return bool.TryParse(text.ToLower(), out val);
 		}
 
+		// converts an SDRI color (I stored in alpha) to an HDR color
 		public static Color SDRI_To_HDR(Color sdri)
 		{
 			float factor = Mathf.Pow(2f, sdri.a);
 			return new Color(sdri.r * factor, sdri.g * factor, sdri.b * factor);
 		}
 
+		// converts an SDRI color to an HDR color
 		public static Color SDRI_To_HDR(float r, float g, float b, float i)
 		{
 			float factor = Mathf.Pow(2f, i);
 			return new Color(r * factor, g * factor, b * factor);
 		}
 
+		// parses an HDR color
 		public static bool EvaluateColorHDR(string text, out Color val, out Color sdr)
 		{
 			bool isFormatted = true;

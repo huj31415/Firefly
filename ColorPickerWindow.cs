@@ -1,11 +1,12 @@
-﻿using Steamworks;
-using System.Runtime.InteropServices.WindowsRuntime;
+﻿using System;
 using UnityEngine;
 
 namespace Firefly
 {
 	internal class ColorPickerWindow
 	{
+		public delegate void applyColorDelg();
+
 		const int pickerSize = 300;
 		const int sliderSize = 220;
 
@@ -13,10 +14,11 @@ namespace Firefly
 		public string title;
 		public bool show;
 
+		public applyColorDelg onApplyColor;
+		public Color color;
 		float intensity;
 		float h, s, v;
-		Color color;
-
+	
 		// sliders
 		bool rgbMode = false;
 		float[] raw = new float[4];
@@ -42,9 +44,23 @@ namespace Firefly
 			windowRect = new Rect(x, y, 300f, 100f);
 			this.title = title;
 
+			Init(c);
+		}
+
+		public void Show(Color c)
+		{
+			show = true;
+
+			Init(c);
+		}
+
+		void Init(Color c)
+		{
 			color = c;
 			Utils.ColorHSV(c, out h, out s, out v);
+			intensity = c.a;
 
+			// generate initial textures
 			hueTex = TextureUtils.GenerateHueTexture(120, 20);
 			pickerTex = TextureUtils.GenerateGradientTexture(pickerSize, pickerSize, h);
 			colorTex = TextureUtils.GenerateColorTexture(1, 1, color);
@@ -54,6 +70,27 @@ namespace Firefly
 
 			GenerateSliderTextures();
 			sliderTex[3] = TextureUtils.GenerateGradientTexture(120, 20, Color.black, Color.white);
+
+			// update raw slider values based on color
+			if (rgbMode)
+			{
+				raw[0] = color.r;
+				raw[1] = color.g;
+				raw[2] = color.b;
+			}
+			else
+			{
+				raw[0] = h;
+				raw[1] = s;
+				raw[2] = v;
+			}
+			raw[3] = intensity / 5f;
+
+			// update ui text
+			ui_raw[0] = $"{(raw[0] * 255f):F0}";
+			ui_raw[1] = $"{(raw[1] * 255f):F0}";
+			ui_raw[2] = $"{(raw[2] * 255f):F0}";
+			ui_raw[3] = $"{(raw[3] * 5f):F1}";
 		}
 
 		public void Gui()
@@ -87,20 +124,30 @@ namespace Firefly
 
 		void DrawBottomControls()
 		{
+			// draw rgb toggle
 			bool previousRgb = rgbMode;
 			rgbMode = GUILayout.Toggle(rgbMode, "RGB mode");
 			if (previousRgb != rgbMode) OnRGBToggle();
 
+			// draw buttons
 			GUILayout.Space(20);
-			if (GUILayout.Button("Save and close")) show = false;
+			if (GUILayout.Button("Apply color")) onApplyColor();
+			if (GUILayout.Button("Save and close"))
+			{
+				onApplyColor();
+				show = false;
+			}
+			if (GUILayout.Button("Close without saving")) show = false;
 		}
 
+		// draws color preview
 		void DrawColor()
 		{
 			Rect rect = GUILayoutUtility.GetRect(120f, 20f, GUILayout.Width(pickerSize));
 			GUI.DrawTexture(rect, colorTex);
 		}
 
+		// draws the hue selection bar
 		void DrawHueBar()
 		{
 			Rect rect = GUILayoutUtility.GetRect(120f, 20f, GUILayout.Width(pickerSize));
@@ -112,6 +159,7 @@ namespace Firefly
 			GUI.DrawTexture(rect, hueSelectorTex);
 		}
 
+		// draws the saturation and value selection field
 		void DrawPicker()
 		{
 			Rect rect = GUILayoutUtility.GetRect(120f, 120f, GUILayout.Width(pickerSize), GUILayout.Height(pickerSize));
@@ -123,11 +171,13 @@ namespace Firefly
 			GUI.DrawTexture(rect, pickerSelectorTex);
 		}
 
+		// draws individual color sliders
 		void DrawSliders()
 		{
 			DrawColorSlider(rgbMode ? "R" : "H", 0, true);
 			DrawColorSlider(rgbMode ? "G" : "S", 1, true);
 			DrawColorSlider(rgbMode ? "B" : "V", 2, true);
+			GUILayout.Space(10);
 			DrawColorSlider("I", 3, false);  // HDR intensity
 		}
 
@@ -152,16 +202,18 @@ namespace Firefly
 			bool hasValue = float.TryParse(newText, out float v);
 			if (newText != ui_raw[index] && hasValue)  // only set the value if it changed and if it's a correct float
 			{
+				// if color, use 255 as a base
 				if (isColor)
 				{
 					float clamped = Mathf.Clamp(v, 0f, 255f);
 					ui_raw[index] = $"{clamped:F0}";  // display the value as an int
 					raw[index] = clamped / 255f;
-				} else
+				} else  // otherwise use 5
 				{
 					// HDR intensity slider
-					raw[index] = Mathf.Clamp(v, 0f, 5f);
-					ui_raw[index] = $"{raw[index]:F4}";
+					float clamped = Mathf.Clamp(v, 0f, 5f);
+					ui_raw[index] = $"{clamped:F1}";
+					raw[index] = clamped / 5f;
 				}
 				
 				OnSliderChange();
@@ -170,6 +222,7 @@ namespace Firefly
 			GUILayout.EndHorizontal();
 		}
 
+		// handles input on the hue bar
 		void HandleHueInput(Vector2 mouse)
 		{
 			bool inBar = GuiUtils.GetRectPoint(mouse, hueBarRect, out Vector2 clickPoint);
@@ -186,6 +239,7 @@ namespace Firefly
 			}
 		}
 
+		// handles input on the SV field
 		void HandlePickerInput(Vector2 mouse)
 		{
 			bool inBar = GuiUtils.GetRectPoint(mouse, pickerRect, out Vector2 clickPoint);
@@ -201,6 +255,7 @@ namespace Firefly
 			}
 		}
 
+		// handles input on the sliders
 		void HandleSliderInput(Vector2 mouse)
 		{
 			for (int i = 0; i < 4; i++)
@@ -244,6 +299,7 @@ namespace Firefly
 		void UpdateColor()
 		{
 			color = Utils.ColorHSV(h, s, v);
+			color.a = intensity;
 			colorTex = TextureUtils.GenerateColorTexture(1, 1, color);
 
 			// update sliders
@@ -267,6 +323,7 @@ namespace Firefly
 			ui_raw[0] = $"{(raw[0] * 255f):F0}";
 			ui_raw[1] = $"{(raw[1] * 255f):F0}";
 			ui_raw[2] = $"{(raw[2] * 255f):F0}";
+			ui_raw[3] = $"{(raw[3] * 5f):F1}";
 		}
 
 		void OnSliderChange()
@@ -283,7 +340,7 @@ namespace Firefly
 			}
 
 			// update intensity
-			intensity = raw[3];
+			intensity = raw[3] * 5f;
 
 			pickerTex = TextureUtils.GenerateGradientTexture(pickerSize, pickerSize, h);
 			UpdateColor();

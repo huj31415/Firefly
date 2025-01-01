@@ -10,6 +10,7 @@ namespace Firefly
 {
 	internal class GuiUtils
 	{
+		// draws a setting bool override field
 		public static void DrawConfigFieldBool(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
 			string needsReload = tgl[label].needsReload ? "*" : "";
@@ -17,6 +18,7 @@ namespace Firefly
 			tgl[label].value = GUILayout.Toggle((bool)tgl[label].value, label + needsReload);
 		}
 
+		// draws a setting float override field
 		public static void DrawConfigFieldFloat(string label, Dictionary<string, ModSettings.Field> tgl)
 		{
 			string needsReload = tgl[label].needsReload ? "*" : "";
@@ -31,6 +33,7 @@ namespace Firefly
 			GUILayout.EndHorizontal();
 		}
 
+		// draws a labeled slider
 		public static float LabelSlider(string label, float value, float startValue, float endValue)
 		{
 			GUILayout.BeginHorizontal();
@@ -43,6 +46,7 @@ namespace Firefly
 			return v;
 		}
 
+		// draws a float input field
 		public static void DrawFloatInput(string label, ref string text, ref float value, params GUILayoutOption[] layoutOptions)
 		{
 			GUILayout.BeginHorizontal(layoutOptions);
@@ -55,6 +59,7 @@ namespace Firefly
 			GUILayout.EndHorizontal();
 		}
 
+		// gets rect point from mouse point
 		public static bool GetRectPoint(Vector2 point, Rect rect, out Vector2 result)
 		{
 			if (rect.Contains(point))
@@ -71,6 +76,8 @@ namespace Firefly
 			return false;
 		}
 
+		// draws a button with a color
+		// pix texture should be a 1x1 white texture
 		public static bool DrawColorButton(string label, Texture2D pix, Color color)
 		{
 			GUILayout.BeginHorizontal();

@@ -255,21 +255,11 @@ namespace Firefly
 					Logging.Log("Envelope has a part override config");
 					BodyColors overrideColor = ConfigManager.Instance.partConfigs[envelope.partName];
 
-					// TODO: This is a mess, please clean up
-					// TODO: Please don't ignore this todo
 					// override the colors with the override
-					if (overrideColor.glow.HasValue) colors.glow = overrideColor.glow;
-					if (overrideColor.glowHot.HasValue) colors.glowHot = overrideColor.glowHot;
-
-					if (overrideColor.trailPrimary.HasValue) colors.trailPrimary = overrideColor.trailPrimary;
-					if (overrideColor.trailSecondary.HasValue) colors.trailSecondary = overrideColor.trailSecondary;
-					if (overrideColor.trailTertiary.HasValue) colors.trailTertiary = overrideColor.trailTertiary;
-					if (overrideColor.trailStreak.HasValue) colors.trailStreak = overrideColor.trailStreak;
-
-					if (overrideColor.wrapLayer.HasValue) colors.wrapLayer = overrideColor.wrapLayer;
-					if (overrideColor.wrapStreak.HasValue) colors.wrapStreak = overrideColor.wrapStreak;
-
-					if (overrideColor.shockwave.HasValue) colors.shockwave = overrideColor.shockwave;
+					foreach (string key in overrideColor.fields.Keys)
+					{
+						if (overrideColor[key] != null) colors[key] = overrideColor[key];
+					}
 				}
 
 				// is asteroid? if yes set randomness factor to 1, so the shader draws colored streaks
@@ -282,18 +272,18 @@ namespace Firefly
 				fxVessel.commandBuffer.SetGlobalVector("_RandomnessFactor", Vector2.one * randomnessFactor);
 
 				// add commands to set the color properties
-				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors.glow.Value);
-				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors.glowHot.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors["glow"]);
+				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors["glow_hot"]);
 
-				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", colors.trailPrimary.Value);
-				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", colors.trailSecondary.Value);
-				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", colors.trailTertiary.Value);
-				fxVessel.commandBuffer.SetGlobalColor("_StreakColor", colors.trailStreak.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", colors["trail_primary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", colors["trail_secondary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", colors["trail_tertiary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_StreakColor", colors["trail_streak"]);
 
-				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", colors.wrapLayer.Value);
-				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", colors.wrapStreak.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", colors["wrap_layer"]);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", colors["wrap_streak"]);
 
-				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", colors.shockwave.Value);
+				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", colors["shockwave"]);
 
 				// draw the mesh
 				fxVessel.commandBuffer.DrawRenderer(envelope.renderer, fxVessel.material);
@@ -546,7 +536,7 @@ namespace Firefly
 		/// </summary>
 		void UpdateParticleSystems()
 		{
-			float entrySpeed = doEffectEditor ? EffectEditor.Instance.effectSpeed : GetAdjustedEntrySpeed();
+			float entrySpeed = doEffectEditor ? (EffectEditor.Instance.effectSpeed * currentBody.strengthMultiplier) : GetAdjustedEntrySpeed();
 
 			// check if we should actually do the particles
 			if (entrySpeed < currentBody.particleThreshold)

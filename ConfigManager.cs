@@ -1,28 +1,72 @@
-﻿using System;
+﻿using CommNet.Network;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static Firefly.ModSettings;
 
 namespace Firefly
 {
+	public class HDRColor
+	{
+		public Color baseColor;
+		public Color hdr;
+		public float intensity;
+
+		public bool hasValue;
+
+		public HDRColor(Color sdri)
+		{
+			baseColor = sdri;
+			hdr = Utils.SDRI_To_HDR(sdri);
+			intensity = sdri.a;
+		}
+
+		public string SDRIString()
+		{
+			return $"{Mathf.RoundToInt(baseColor.r * 255f)} {Mathf.RoundToInt(baseColor.g * 255f)} {Mathf.RoundToInt(baseColor.b * 255f)} {baseColor.a}";
+		}
+
+		public static HDRColor CreateNull()
+		{
+			HDRColor c = new HDRColor(Color.black);
+			c.hasValue = false;
+			return c;
+		}
+
+		public static implicit operator Color(HDRColor x)
+		{
+			return x.hdr;
+		}
+	}
+
 	public class BodyColors
 	{
-		public Color? glow;
-		public Color? glowHot;
+		public Dictionary<string, HDRColor> fields = new Dictionary<string, HDRColor>();
 
-		public Color? trailPrimary;
-		public Color? trailSecondary;
-		public Color? trailTertiary;
-		public Color? trailStreak;
+		public HDRColor shockwave;
 
-		public Color? wrapLayer;
-		public Color? wrapStreak;
-
-		public Color? shockwave;
+		// custom indexer
+		public HDRColor this[string i]
+		{
+			get => fields[i];
+			set => fields[i] = value;
+		}
 
 		public BodyColors()
 		{
+			fields.Add("glow", null);
+			fields.Add("glow_hot", null);
 
+			fields.Add("trail_primary", null);
+			fields.Add("trail_secondary", null);
+			fields.Add("trail_tertiary", null);
+			fields.Add("trail_streak", null);
+
+			fields.Add("wrap_layer", null);
+			fields.Add("wrap_streak", null);
+
+			fields.Add("shockwave", null);
 		}
 
 		/// <summary>
@@ -30,23 +74,33 @@ namespace Firefly
 		/// </summary>
 		public BodyColors(BodyColors org)
 		{
-			this.glow = org.glow;
-			this.glowHot = org.glowHot;
+			fields.Add("glow", org["glow"]);
+			fields.Add("glow_hot", org["glow_hot"]);
 
-			this.trailPrimary = org.trailPrimary;
-			this.trailSecondary = org.trailSecondary;
-			this.trailTertiary = org.trailTertiary;
-			this.trailStreak = org.trailStreak;
+			fields.Add("trail_primary", org["trail_primary"]);
+			fields.Add("trail_secondary", org["trail_secondary"]);
+			fields.Add("trail_tertiary", org["trail_tertiary"]);
+			fields.Add("trail_streak", org["trail_streak"]);
 
-			this.wrapLayer = org.wrapLayer;
-			this.wrapStreak = org.wrapStreak;
+			fields.Add("wrap_layer", org["wrap_layer"]);
+			fields.Add("wrap_streak", org["wrap_streak"]);
 
-			this.shockwave = org.shockwave;
+			fields.Add("shockwave", org["shockwave"]);
+		}
+
+		public void SaveToNode(ref ConfigNode node)
+		{
+			for (int i = 0; i < fields.Count; i++)
+			{
+				KeyValuePair<string, HDRColor> elem = fields.ElementAt(i);
+				node.AddValue(elem.Key, elem.Value.SDRIString());
+			}
 		}
 	}
 
 	public class BodyConfig
 	{
+		public string cfgPath = "";
 		public string bodyName = "Unknown";
 
 		// The entry speed gets multiplied by this before getting sent to the shader
@@ -78,6 +132,7 @@ namespace Firefly
 		public BodyConfig(BodyConfig template)
 		{
 			this.bodyName = template.bodyName;
+			this.cfgPath = template.cfgPath;
 			this.strengthMultiplier = template.strengthMultiplier;
 			this.lengthMultiplier = template.lengthMultiplier;
 			this.opacityMultiplier = template.opacityMultiplier;
@@ -87,6 +142,25 @@ namespace Firefly
 			this.streakThreshold = template.streakThreshold;
 
 			this.colors = new BodyColors(template.colors);
+		}
+
+		public void SaveToNode(ref ConfigNode node)
+		{
+			node.AddValue("name", bodyName);
+			node.AddValue("strength_multiplier", strengthMultiplier);
+
+			node.AddValue("length_multiplier", lengthMultiplier);
+			node.AddValue("opacity_multiplier", opacityMultiplier);
+			node.AddValue("wrap_fresnel_modifier", wrapFresnelModifier);
+
+			node.AddValue("particle_threshold", particleThreshold);
+
+			node.AddValue("streak_probability", streakProbability);
+			node.AddValue("streak_threshold", streakThreshold);
+
+			ConfigNode colorsNode = new ConfigNode("Color");
+			colors.SaveToNode(ref colorsNode);
+			node.AddNode(colorsNode);
 		}
 	}
 
@@ -104,8 +178,11 @@ namespace Firefly
 	{
 		public static ConfigManager Instance { get; private set; }
 
+		public const string NewConfigPath = "GameData/Firefly/Configs/Saved/";
+
 		public Dictionary<string, BodyConfig> bodyConfigs = new Dictionary<string, BodyConfig>();
 		public List<PlanetPackConfig> planetPackConfigs = new List<PlanetPackConfig>();
+		public string[] loadedBodyConfigs;
 
 		public Dictionary<string, BodyColors> partConfigs = new Dictionary<string, BodyColors>();
 
@@ -177,15 +254,15 @@ namespace Firefly
 			}
 
 			// get the nodes
-			nodes = GameDatabase.Instance.GetConfigNodes("ATMOFX_BODY");
+			UrlDir.UrlConfig[] urlConfigs = GameDatabase.Instance.GetConfigs("ATMOFX_BODY");
 
 			// check if there's actually anything to load
-			if (nodes.Length > 0)
+			if (urlConfigs.Length > 0)
 			{
 				// iterate over every node and store the data
-				for (int i = 0; i < nodes.Length; i++)
+				for (int i = 0; i < urlConfigs.Length; i++)
 				{
-					bool success = ProcessSingleNode(nodes[i], out BodyConfig body);
+					bool success = ProcessSingleNode(urlConfigs[i], out BodyConfig body);
 
 					// couldn't load the config
 					if (!success)
@@ -212,6 +289,8 @@ namespace Firefly
 			}
 
 			defaultConfig = bodyConfigs["Default"];
+
+			loadedBodyConfigs = bodyConfigs.Keys.ToArray();
 		}
 
 		/// <summary>
@@ -249,8 +328,10 @@ namespace Firefly
 		/// <summary>
 		/// Processes single node
 		/// </summary>
-		bool ProcessSingleNode(ConfigNode node, out BodyConfig body)
+		bool ProcessSingleNode(UrlDir.UrlConfig cfg, out BodyConfig body)
 		{
+			ConfigNode node = cfg.config;
+
 			body = null;
 
 			string bodyName = node.GetValue("name");
@@ -268,6 +349,7 @@ namespace Firefly
 			bool isFormatted = true;
 			body = new BodyConfig
 			{
+				cfgPath = cfg.parent.fullPath,
 				bodyName = bodyName,
 
 				strengthMultiplier = ReadConfigValue(node, "strength_multiplier", ref isFormatted),
@@ -364,15 +446,12 @@ namespace Firefly
 			bool isFormatted = rootNode.TryGetNode("Color", ref colorNode);
 			if (!isFormatted) return false;
 
-			body.glow = ReadConfigColorHDR(colorNode, "glow", partConfig, ref isFormatted);
-			body.glowHot = ReadConfigColorHDR(colorNode, "glow_hot", partConfig, ref isFormatted);
-			body.trailPrimary = ReadConfigColorHDR(colorNode, "trail_primary", partConfig, ref isFormatted);
-			body.trailSecondary = ReadConfigColorHDR(colorNode, "trail_secondary", partConfig, ref isFormatted);
-			body.trailTertiary = ReadConfigColorHDR(colorNode, "trail_tertiary", partConfig, ref isFormatted);
-			body.trailStreak = ReadConfigColorHDR(colorNode, "trail_streak", partConfig, ref isFormatted);
-			body.wrapLayer = ReadConfigColorHDR(colorNode, "wrap_layer", partConfig, ref isFormatted);
-			body.wrapStreak = ReadConfigColorHDR(colorNode, "wrap_streak", partConfig, ref isFormatted);
-			body.shockwave = ReadConfigColorHDR(colorNode, "shockwave", partConfig, ref isFormatted);
+			BodyColors overrideCol = new BodyColors();
+			var keys = overrideCol.fields.Keys;
+			foreach (string key in keys)
+			{
+				body[key] = ReadConfigColorHDR(colorNode, key, partConfig, ref isFormatted);
+			}
 
 			return isFormatted;
 		}
@@ -402,7 +481,7 @@ namespace Firefly
 		/// <summary>
 		/// Reads one HDR color value from a node
 		/// </summary>
-		Color? ReadConfigColorHDR(ConfigNode node, string key, bool partConfig, ref bool isFormatted)
+		HDRColor ReadConfigColorHDR(ConfigNode node, string key, bool partConfig, ref bool isFormatted)
 		{
 			// check if exists
 			if (!node.HasValue(key))
@@ -423,10 +502,10 @@ namespace Firefly
 				return null;
 			}
 
-			bool success = Utils.EvaluateColorHDR(value, out Color result);
+			bool success = Utils.EvaluateColorHDR(value, out _, out Color sdr);
 			isFormatted = isFormatted && success;
 
-			return result;
+			return new HDRColor(sdr);
 		}
 
 		/// <summary>

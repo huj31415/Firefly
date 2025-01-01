@@ -1,9 +1,97 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace Firefly
 {
+	internal class CreateConfigPopup
+	{
+		public delegate void popupSaveDelg();
+
+		public popupSaveDelg onPopupSave;
+
+		public Rect windowRect = new Rect(900f, 100f, 300f, 300f);
+		public bool show = false;
+		int id;
+
+		string[] bodyConfigs;
+
+		// public values
+		public string selectedName;
+		public string selectedTemplate;
+
+		// ui
+		string ui_cfgName;
+		Vector2 ui_bodyListPosition;
+		int ui_bodyChoice = 0;
+
+		public CreateConfigPopup()
+		{
+			id = this.GetHashCode();
+		}
+
+		public void Open(string[] bodyConfigs)
+		{
+			ui_cfgName = "NewBody";
+			ui_bodyListPosition = Vector2.zero;
+			ui_bodyChoice = 0;
+
+			this.bodyConfigs = bodyConfigs;
+			show = true;
+		}
+
+		public void Gui()
+		{
+			if (!show) return;
+
+			windowRect = GUILayout.Window(id, windowRect, Window, "New config");
+		}
+
+		void Window(int id)
+		{
+			GUILayout.BeginVertical();
+
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Config name");
+			ui_cfgName = GUILayout.TextField(ui_cfgName);
+			GUILayout.EndHorizontal();
+
+			GUILayout.Label("Select a template config");
+			DrawConfigSelector();
+
+			GUILayout.BeginHorizontal();
+			if (GUILayout.Button("Cancel")) Cancel();
+			if (GUILayout.Button("Done")) Done();
+			GUILayout.EndHorizontal();
+
+			GUILayout.EndVertical();
+
+			GUI.DragWindow();
+		}
+
+		void DrawConfigSelector()
+		{
+			ui_bodyListPosition = GUILayout.BeginScrollView(ui_bodyListPosition, GUILayout.Width(300f), GUILayout.Height(125f));
+			ui_bodyChoice = GUILayout.SelectionGrid(ui_bodyChoice, bodyConfigs, Mathf.Min(bodyConfigs.Length, 3));
+
+			GUILayout.EndScrollView();
+		}
+
+		void Cancel()
+		{
+			show = false;
+		}
+
+		void Done()
+		{
+			selectedName = ui_cfgName;
+			selectedTemplate = bodyConfigs[ui_bodyChoice];
+
+			onPopupSave();
+
+			show = false;
+		}
+	}
+
 	internal class EffectEditor
 	{
 		public static EffectEditor Instance { get; private set; }
@@ -20,6 +108,12 @@ namespace Firefly
 		AtmoFxModule fxModule = null;
 
 		// gui
+		string removeConfigText = "Remove selected config";
+		int removeConfigState = 0;
+
+		string saveConfigText = "Save selected to cfg file";
+		int saveConfigState = 0;
+
 		Vector2 ui_bodyListPosition;
 		int ui_bodyChoice;
 
@@ -30,6 +124,9 @@ namespace Firefly
 		string ui_particleThreshold;
 
 		public ColorPickerWindow colorPicker;
+		string currentlyPicking;
+
+		public CreateConfigPopup createConfigPopup;	
 
 		// for drawing color buttons
 		Texture2D whitePixel;
@@ -42,14 +139,50 @@ namespace Firefly
 
 			colorPicker = new ColorPickerWindow("Color picker", 900, 100, Color.red);
 			colorPicker.show = false;
+			colorPicker.onApplyColor = OnApplyColor;
+
+			createConfigPopup = new CreateConfigPopup();
+			createConfigPopup.onPopupSave = OnPopupSave;
 
 			whitePixel = TextureUtils.GenerateColorTexture(1, 1, Color.white);
 		}
 
 		void SaveConfig()
 		{
-			if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = config;
-			else ConfigManager.Instance.defaultConfig = config;
+			if (saveConfigState == 0)
+			{
+				saveConfigText = "Are you sure?";
+				saveConfigState = 1;
+				return;
+			}
+
+			if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
+			else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
+
+			Logging.Log($"Saving body config {currentBody}");
+
+			string path = config.cfgPath;
+			if (!ConfigManager.Instance.loadedBodyConfigs.Contains(currentBody))
+			{
+				path = KSPUtil.ApplicationRootPath + ConfigManager.NewConfigPath + config.bodyName + ".cfg";
+			}
+
+			// create a parent node
+			ConfigNode parent = new ConfigNode("ATMOFX_BODY");
+
+			// create the node
+			ConfigNode node = new ConfigNode("ATMOFX_BODY");
+
+			config.SaveToNode(ref node);
+
+			// add to parent and save
+			parent.AddNode(node);
+			parent.Save(path);
+
+			ScreenMessages.PostScreenMessage($"Saved config to file at path\n{path}", 5f);
+
+			saveConfigState = 0;
+			saveConfigText = "Save selected to cfg file";
 		}
 
 		void ResetFieldText()
@@ -68,6 +201,11 @@ namespace Firefly
 			if (FlightCamera.fetch.mainCamera == null) return;
 
 			effectDirection = vessel.transform.InverseTransformDirection(FlightCamera.fetch.mainCamera.transform.forward);
+		}
+
+		void ApplyShipDirection()
+		{
+			effectDirection = -Vector3.up;
 		}
 
 		public Vector3 GetWorldDirection()
@@ -131,7 +269,12 @@ namespace Firefly
 		{
 			GUILayout.BeginVertical();
 
+			// config create
+			if (GUILayout.Button("Create new config") && !createConfigPopup.show) createConfigPopup.Open(bodyConfigs);
+			if (GUILayout.Button(removeConfigText) && currentBody != "Default") RemoveSelectedConfig();
+
 			// body selection
+			GUILayout.Label("Select a config:");
 			DrawConfigSelector();
 			GUILayout.Space(20);
 
@@ -141,7 +284,8 @@ namespace Firefly
 
 			// saving
 			if (GUILayout.Button("Align effects to camera")) ApplyCameraDirection();
-			if (GUILayout.Button("Save to cfg file")) SaveConfig();
+			if (GUILayout.Button("Align effects to ship")) ApplyShipDirection();
+			if (GUILayout.Button(saveConfigText)) SaveConfig();
 
 			// end
 			GUILayout.EndVertical();
@@ -155,6 +299,8 @@ namespace Firefly
 			// body configuration
 			DrawBodyConfiguration();
 
+			GUILayout.Space(20);
+
 			// color configuration
 			DrawColorConfiguration();
 
@@ -164,12 +310,14 @@ namespace Firefly
 
 		void DrawConfigSelector()
 		{
-			GUILayout.Label("Select a config:");
 			ui_bodyListPosition = GUILayout.BeginScrollView(ui_bodyListPosition, GUILayout.Width(300f), GUILayout.Height(125f));
 			int newChoice = GUILayout.SelectionGrid(ui_bodyChoice, bodyConfigs, Mathf.Min(bodyConfigs.Length, 3));
 
 			if (newChoice != ui_bodyChoice)
 			{
+				if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
+				else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
+
 				ui_bodyChoice = newChoice;
 				currentBody = bodyConfigs[newChoice];
 
@@ -196,28 +344,87 @@ namespace Firefly
 
 		void DrawColorConfiguration()
 		{
-			DrawColorButton("Glow", ref config.colors.glow);
-			DrawColorButton("Hot Glow", ref config.colors.glowHot);
+			DrawColorButton("Glow", "glow");
+			DrawColorButton("Hot Glow", "glow_hot");
 
-			DrawColorButton("Trail Primary", ref config.colors.trailPrimary);
-			DrawColorButton("Trail Secondary", ref config.colors.trailSecondary);
-			DrawColorButton("Trail Tertiary", ref config.colors.trailTertiary);
-			DrawColorButton("Trail Streak", ref config.colors.trailStreak);
+			DrawColorButton("Trail Primary", "trail_primary");
+			DrawColorButton("Trail Secondary", "trail_secondary");
+			DrawColorButton("Trail Tertiary", "trail_tertiary");
+			DrawColorButton("Trail Streak", "trail_streak");
 
-			DrawColorButton("Wrap Layer", ref config.colors.wrapLayer);
-			DrawColorButton("Wrap Streak", ref config.colors.wrapStreak);
+			DrawColorButton("Wrap Layer", "wrap_layer");
+			DrawColorButton("Wrap Streak", "wrap_streak");
 
-			DrawColorButton("Bowshock", ref config.colors.shockwave);
+			DrawColorButton("Bowshock", "shockwave");
 		}
 
-		void DrawColorButton(string label, ref Color? color)
+		void DrawColorButton(string label, string colorKey)
 		{
-			Color c = (Color)color;
+			HDRColor c = config.colors[colorKey];
 
-			if (GuiUtils.DrawColorButton(label, whitePixel, c))
+			if (GuiUtils.DrawColorButton(label, whitePixel, c.baseColor))
 			{
-
+				currentlyPicking = colorKey;
+				colorPicker.Show(c.baseColor);
 			}
+		}
+
+		void OnApplyColor()
+		{
+			config.colors[currentlyPicking] = new HDRColor(colorPicker.color);
+
+			// reset the commandbuffer, to update colors
+			fxModule.DestroyCommandBuffer();
+			fxModule.InitializeCommandBuffer();
+			fxModule.PopulateCommandBuffer();
+		}
+
+		void OnPopupSave()
+		{
+			if (currentBody != "Default") ConfigManager.Instance.bodyConfigs[currentBody] = new BodyConfig(config);
+			else ConfigManager.Instance.defaultConfig = new BodyConfig(config);
+
+			config = new BodyConfig(ConfigManager.Instance.bodyConfigs[createConfigPopup.selectedTemplate]);
+			currentBody = createConfigPopup.selectedName;
+			config.bodyName = currentBody;
+
+			string[] newBodyArray = new string[bodyConfigs.Length + 1];
+			bodyConfigs.CopyTo(newBodyArray, 0);
+			newBodyArray[bodyConfigs.Length] = currentBody;
+			ConfigManager.Instance.bodyConfigs.Add(currentBody, new BodyConfig(config));
+
+			ui_bodyChoice = bodyConfigs.Length;
+
+			bodyConfigs = newBodyArray;
+			ResetFieldText();
+
+			fxModule.currentBody = config;
+			fxModule.ReloadVessel();
+		}
+
+		void RemoveSelectedConfig()
+		{
+			if (removeConfigState == 0)
+			{
+				removeConfigText = "Are you sure?";
+				removeConfigState = 1;
+
+				return;
+			}
+
+			ConfigManager.Instance.bodyConfigs.Remove(currentBody);
+			config = new BodyConfig(ConfigManager.Instance.bodyConfigs["Default"]);
+			currentBody = "Default";
+			ui_bodyChoice = 0;
+
+			bodyConfigs = ConfigManager.Instance.bodyConfigs.Keys.ToArray();
+			ResetFieldText();
+
+			fxModule.ReloadVessel();
+
+			// reset state
+			removeConfigText = "Remove selected config";
+			removeConfigState = 0;
 		}
 
 		void DrawSimConfiguration()

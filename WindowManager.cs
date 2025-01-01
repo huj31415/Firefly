@@ -91,6 +91,7 @@ namespace Firefly
 
 			if (effectEditorActive) effectEditorPosition = GUILayout.Window(512, effectEditorPosition, effectEditor.Gui, "Effect editor");
 			if (effectEditorActive) effectEditor.colorPicker.Gui();
+			if (effectEditorActive) effectEditor.createConfigPopup.Gui();
 		}
 
 		/// <summary>

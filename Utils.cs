@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Steamworks;
+using UnityEngine;
 
 namespace Firefly
 {
@@ -30,10 +31,23 @@ namespace Firefly
 			return bool.TryParse(text.ToLower(), out val);
 		}
 
-		public static bool EvaluateColorHDR(string text, out Color val)
+		public static Color SDRI_To_HDR(Color sdri)
+		{
+			float factor = Mathf.Pow(2f, sdri.a);
+			return new Color(sdri.r * factor, sdri.g * factor, sdri.b * factor);
+		}
+
+		public static Color SDRI_To_HDR(float r, float g, float b, float i)
+		{
+			float factor = Mathf.Pow(2f, i);
+			return new Color(r * factor, g * factor, b * factor);
+		}
+
+		public static bool EvaluateColorHDR(string text, out Color val, out Color sdr)
 		{
 			bool isFormatted = true;
 			val = Color.magenta;
+			sdr = Color.magenta;
 
 			string[] channels = text.Split(' ');
 			if (channels.Length < 4) return false;
@@ -53,8 +67,8 @@ namespace Firefly
 			g /= 255f;
 			b /= 255f;
 
-			float factor = Mathf.Pow(2f, i);
-			val = new Color(r * factor, g * factor, b * factor);
+			val = SDRI_To_HDR(r, g, b, i);
+			sdr = new Color(r, g, b, i);
 
 			return isFormatted;
 		}

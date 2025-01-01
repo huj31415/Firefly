@@ -110,9 +110,11 @@ namespace Firefly
 		// gui
 		string removeConfigText = "Remove selected config";
 		int removeConfigState = 0;
+		float removeConfigStateTimer = 0f;
 
 		string saveConfigText = "Save selected to cfg file";
 		int saveConfigState = 0;
+		float saveConfigStateTimer = 0f;
 
 		Vector2 ui_bodyListPosition;
 		int ui_bodyChoice;
@@ -156,6 +158,7 @@ namespace Firefly
 			{
 				saveConfigText = "Are you sure?";
 				saveConfigState = 1;
+				saveConfigStateTimer = Time.time;
 				return;
 			}
 
@@ -186,8 +189,8 @@ namespace Firefly
 
 			ScreenMessages.PostScreenMessage($"Saved config to file at path\n{path}", 5f);
 
-			saveConfigState = 0;
-			saveConfigText = "Save selected to cfg file";
+			// reset state
+			ResetSaveConfigState();
 		}
 
 		// resets the ui input texts
@@ -271,6 +274,16 @@ namespace Firefly
 			if (fxModule == null || fxModule.fxVessel == null) return;
 			Transform camTransform = fxModule.fxVessel.airstreamCamera.transform;
 			if (!fxModule.debugMode) DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.cyan);
+
+			// timed gui states
+			if ((Time.time - saveConfigStateTimer) >= 8f && saveConfigState == 1)
+			{
+				ResetSaveConfigState();
+			}
+			if ((Time.time - removeConfigStateTimer) >= 8f && removeConfigState == 1)
+			{
+				ResetRemoveConfigState();
+			}
 		}
 
 		void DrawLeftEditor()
@@ -433,6 +446,7 @@ namespace Firefly
 			{
 				removeConfigText = "Are you sure?";
 				removeConfigState = 1;
+				removeConfigStateTimer = Time.time;
 
 				return;
 			}
@@ -448,6 +462,17 @@ namespace Firefly
 			fxModule.ReloadVessel();
 
 			// reset state
+			ResetRemoveConfigState();
+		}
+
+		void ResetSaveConfigState()
+		{
+			saveConfigState = 0;
+			saveConfigText = "Save selected to cfg file";
+		}
+
+		void ResetRemoveConfigState()
+		{
 			removeConfigText = "Remove selected config";
 			removeConfigState = 0;
 		}

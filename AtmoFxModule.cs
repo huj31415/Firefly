@@ -316,12 +316,17 @@ namespace Firefly
 		void CreatePartEnvelope(Part part)
 		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
+			if (fxEnvelopes.Length < 1) fxEnvelopes = part.FindModelTransformsWithTag("Icon_Hidden"); 
+
 			if (fxEnvelopes.Length > 0)
 			{
 				Logging.Log($"Part {part.name} has a defined effect envelope. Skipping mesh search.");
 
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{
+					// tag search should only include names with atmofx_envelope
+					if (fxEnvelopes[j].tag == "Icon_Hidden" && !fxEnvelopes[j].name.Contains("atmofx_envelope")) continue;
+
 					// check if active
 					if (!fxEnvelopes[j].gameObject.activeInHierarchy) continue;
 

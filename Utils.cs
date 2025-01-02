@@ -1,4 +1,5 @@
 ﻿using Steamworks;
+using System.Linq;
 using UnityEngine;
 
 namespace Firefly
@@ -127,6 +128,13 @@ namespace Firefly
 			return (
 				model.gameObject.layer == 1
 			);
+		}
+
+		public static Transform[] FindTaggedTransforms(Part part)
+		{
+			// finds transforms tagged with Icon_Hidden and only those with atmofx_envelope in their name
+			return part.FindModelTransformsWithTag("Icon_Hidden")
+				.Where(x => x.name.Contains("atmofx_envelope")).ToArray();
 		}
 
 		/// <summary>

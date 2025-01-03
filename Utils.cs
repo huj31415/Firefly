@@ -137,6 +137,15 @@ namespace Firefly
 				.Where(x => x.name.Contains("atmofx_envelope")).ToArray();
 		}
 
+		public static Vector3 ConvertNodeToModel(Vector3 node, Part part, Transform model)
+		{
+			// convert to world-space
+			Vector3 worldSpace = part.transform.TransformPoint(node);
+
+			// convert to model-space
+			return model.transform.InverseTransformPoint(worldSpace);
+		}
+
 		/// <summary>
 		/// Returns the angle of attack
 		/// Code courtesy FAR

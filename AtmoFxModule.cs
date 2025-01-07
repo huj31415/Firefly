@@ -383,7 +383,7 @@ namespace Firefly
 					Utils.GetPartCfgName(part.partInfo.name),
 					model,
 					model.transform.lossyScale,
-					new Vector3(1.05f, 1.07f, 1.05f));
+					(Vector3)ModSettings.I["envelope_scale_factor"]);
 				fxVessel.fxEnvelope.Add(envelope);
 			}
 		}
@@ -428,22 +428,10 @@ namespace Firefly
 			fxVessel.orgParticleRates.Clear();
 
 			// spawn particle systems
-			fxVessel.sparkParticles = Instantiate(AssetLoader.Instance.sparkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.chunkParticles = Instantiate(AssetLoader.Instance.chunkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.alternateChunkParticles = Instantiate(AssetLoader.Instance.alternateChunkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.smokeParticles = Instantiate(AssetLoader.Instance.smokeParticles, vessel.transform).GetComponent<ParticleSystem>();
-
-			// register the particle systems
-			StoreParticleSystem(fxVessel.sparkParticles);
-			StoreParticleSystem(fxVessel.chunkParticles);
-			StoreParticleSystem(fxVessel.alternateChunkParticles);
-			StoreParticleSystem(fxVessel.smokeParticles);
-
-			// initialize particle system transforms, spawning them at the center of the bounding box
-			InitializeParticleTransform(fxVessel.sparkParticles.transform);
-			InitializeParticleTransform(fxVessel.chunkParticles.transform);
-			InitializeParticleTransform(fxVessel.alternateChunkParticles.transform);
-			InitializeParticleTransform(fxVessel.smokeParticles.transform);
+			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles);
+			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles);
+			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles);
+			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles);
 
 			// disable if needed
 			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
@@ -468,21 +456,25 @@ namespace Firefly
 			}
 		}
 
-		/// <summary>
-		/// Stores the rate of a given particle system in the list
-		/// </summary>
-		void StoreParticleSystem(ParticleSystem ps)
+		ParticleSystem CreateParticleSystem(GameObject prefab)
 		{
+			// instantiate prefab
+			ParticleSystem ps = Instantiate(prefab, vessel.transform).GetComponent<ParticleSystem>();
 			fxVessel.allParticles.Add(ps);
 
+			// store original emission rate
 			ParticleSystem.MinMaxCurve curve = ps.emission.rateOverTime;
 			fxVessel.orgParticleRates.Add(new FloatPair(curve.constantMin, curve.constantMax));
-		}
 
-		void InitializeParticleTransform(Transform t)
-		{
-			t.localRotation = Quaternion.identity;
-			t.localPosition = fxVessel.vesselBoundCenter;
+			// initialize transform pos and rot
+			ps.transform.localRotation = Quaternion.identity;
+			ps.transform.localPosition = fxVessel.vesselBoundCenter;
+
+			// set material texture
+			ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
+			renderer.sharedMaterial.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+
+			return ps;
 		}
 
 		/// <summary>
@@ -695,7 +687,7 @@ namespace Firefly
 				// update the material with dynamic properties
 				fxVessel.material.SetVector("_Velocity", doEffectEditor ? editor.GetWorldDirection() : GetEntryVelocity());
 				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
-				fxVessel.material.SetMatrix("_AirstreamVP", VP);
+				Shader.SetGlobalMatrix("_AirstreamVP", VP);  // setting global, to also work on particles
 
 				UpdateMaterialProperties();
 			}

@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Firefly
 {
@@ -11,7 +11,8 @@ namespace Firefly
 		public enum ValueType
 		{
 			Boolean,
-			Float
+			Float,
+			Float3
 		}
 
 		public class Field
@@ -55,7 +56,8 @@ namespace Firefly
 					{ "disable_debris", new Field(false, ValueType.Boolean, true) },
 					{ "disable_smoke", new Field(false, ValueType.Boolean, true) },
 					{ "strength_base", new Field(2800f, ValueType.Float, false) },
-					{ "length_mult", new Field(1f, ValueType.Float, false) }
+					{ "length_mult", new Field(1f, ValueType.Float, false) },
+					{ "envelope_scale_factor", new Field(new Vector3(1.05f, 1.07f, 1.05f), ValueType.Float3, true) }
 				}
 			};
 

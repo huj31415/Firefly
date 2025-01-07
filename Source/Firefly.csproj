@@ -247,6 +247,14 @@
     <Compile Include="Utils.cs" />
     <Compile Include="Versioning.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ParticleShader.shader">
+      <Link>ParticleShader.shader</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ReentryShader.shader">
+      <Link>ReentryShader.shader</Link>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y "$(TargetDir)\Firefly.*" "$(ReferencePath)..\..\GameData\Firefly\Plugins\*"

@@ -1,8 +1,5 @@
-using Steamworks;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -222,9 +219,6 @@ namespace Firefly
 			isLoaded = true;
 		}
 
-		/// <summary>
-		/// Initializes the CommandBuffer for the vessel, and adds it to the cameras
-		/// </summary>
 		public void InitializeCommandBuffer()
 		{
 			fxVessel.commandBuffer = new CommandBuffer();
@@ -388,9 +382,6 @@ namespace Firefly
 			}
 		}
 
-		/// <summary>
-		/// Creates the effect envelopes
-		/// </summary>
 		void UpdateFxEnvelopes()
 		{
 			Logging.Log($"Updating fx envelopes for vessel {vessel.name}");
@@ -407,9 +398,6 @@ namespace Firefly
 			}
 		}
 
-		/// <summary>
-		/// Creates all particle systems for the vessel
-		/// </summary>
 		void CreateParticleSystems()
 		{
 			Logging.Log("Creating particle systems");

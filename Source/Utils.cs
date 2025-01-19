@@ -34,6 +34,26 @@ namespace Firefly
 			return bool.TryParse(text.ToLower(), out val);
 		}
 
+		// parses a vector3
+		public static bool EvaluateFloat3(string text, out Vector3 val)
+		{
+			bool isFormatted = true;
+			val = Vector3.zero;
+
+			string[] channels = text.Split(' ');
+			if (channels.Length < 3) return false;
+
+			// evaluate the values
+			float x = 0f;
+			float y = 0f;
+			float z = 0f;
+			isFormatted = isFormatted && EvaluateFloat(channels[0], out x);
+			isFormatted = isFormatted && EvaluateFloat(channels[1], out y);
+			isFormatted = isFormatted && EvaluateFloat(channels[2], out z);
+
+			return isFormatted;
+		}
+
 		// converts an SDRI color (I stored in alpha) to an HDR color
 		public static Color SDRI_To_HDR(Color sdri)
 		{

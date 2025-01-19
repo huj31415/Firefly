@@ -72,9 +72,20 @@ namespace Firefly
 			for (int i = 0; i < fields.Count; i++)
 			{
 				KeyValuePair<string, Field> elem = fields.ElementAt(i);
-				node.AddValue(elem.Key, elem.Value.value);
+				object val = elem.Value;
 
-				Logging.Log($"ModSettings -  Saved {elem.Key} to node as {elem.Value.value}");
+				// special cases, like float3
+				if (elem.Value.valueType == ValueType.Float3)
+				{
+					Vector3 vec = (Vector3)elem.Value.value;
+
+					val = string.Join(" ", vec.x, vec.y, vec.z);
+				}
+
+				// save
+				node.AddValue(elem.Key, val);
+
+				Logging.Log($"ModSettings -  Saved {elem.Key} to node as {val}");
 			}
 		}
 
@@ -227,6 +238,11 @@ namespace Firefly
 					float result_float;
 					success = Utils.EvaluateFloat(value, out result_float);
 					result = result_float;
+					break;
+				case ModSettings.ValueType.Float3:
+					Vector3 result_float3;
+					success = Utils.EvaluateFloat3(value, out result_float3);
+					result = result_float3;
 					break;
 				default: break;
 			}

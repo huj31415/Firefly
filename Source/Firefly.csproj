@@ -248,10 +248,22 @@
     <Compile Include="Versioning.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ParticleShader.shader">
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\CommonFunctions.cginc">
+      <Link>CommonFunctions.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\BowshockPass.cginc">
+      <Link>BowshockPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\GlowPass.cginc">
+      <Link>GlowPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\MainPass.cginc">
+      <Link>MainPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\ParticleShader.shader">
       <Link>ParticleShader.shader</Link>
     </None>
-    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ReentryShader.shader">
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\ReentryShader.shader">
       <Link>ReentryShader.shader</Link>
     </None>
   </ItemGroup>

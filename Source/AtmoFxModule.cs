@@ -52,6 +52,7 @@ namespace Firefly
 
 		public bool hasParticles = false;
 
+		public List<Material> particleMaterials = new List<Material>();
 		public List<ParticleSystem> allParticles = new List<ParticleSystem>();
 		public List<FloatPair> orgParticleRates = new List<FloatPair>();
 		public ParticleSystem sparkParticles;
@@ -377,7 +378,7 @@ namespace Firefly
 					Utils.GetPartCfgName(part.partInfo.name),
 					model,
 					model.transform.lossyScale,
-					(Vector3)ModSettings.I["envelope_scale_factor"]);
+					new Vector3(1.05f, 1.07f, 1.05f));
 				fxVessel.fxEnvelope.Add(envelope);
 			}
 		}
@@ -412,6 +413,7 @@ namespace Firefly
 				if (t.TryGetComponent(out ParticleSystem _)) Destroy(t.gameObject);
 			}
 
+			fxVessel.particleMaterials.Clear();
 			fxVessel.allParticles.Clear();
 			fxVessel.orgParticleRates.Clear();
 
@@ -460,7 +462,10 @@ namespace Firefly
 
 			// set material texture
 			ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
-			renderer.sharedMaterial.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+			renderer.material = new Material(renderer.sharedMaterial);
+			renderer.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+
+			fxVessel.particleMaterials.Add(renderer.material);
 
 			return ps;
 		}
@@ -675,7 +680,13 @@ namespace Firefly
 				// update the material with dynamic properties
 				fxVessel.material.SetVector("_Velocity", doEffectEditor ? editor.GetWorldDirection() : GetEntryVelocity());
 				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
-				Shader.SetGlobalMatrix("_AirstreamVP", VP);  // setting global, to also work on particles
+				fxVessel.material.SetMatrix("_AirstreamVP", VP);
+
+				// particle properties
+				for (int i = 0; i < fxVessel.particleMaterials.Count; i++)
+				{
+					fxVessel.particleMaterials[i].SetMatrix("_AirstreamVP", VP);
+				}
 
 				UpdateMaterialProperties();
 			}

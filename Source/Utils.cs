@@ -44,12 +44,9 @@ namespace Firefly
 			if (channels.Length < 3) return false;
 
 			// evaluate the values
-			float x = 0f;
-			float y = 0f;
-			float z = 0f;
-			isFormatted = isFormatted && EvaluateFloat(channels[0], out x);
-			isFormatted = isFormatted && EvaluateFloat(channels[1], out y);
-			isFormatted = isFormatted && EvaluateFloat(channels[2], out z);
+			isFormatted = isFormatted && EvaluateFloat(channels[0], out val.x);
+			isFormatted = isFormatted && EvaluateFloat(channels[1], out val.y);
+			isFormatted = isFormatted && EvaluateFloat(channels[2], out val.z);
 
 			return isFormatted;
 		}

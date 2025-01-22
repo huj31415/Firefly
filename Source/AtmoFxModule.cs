@@ -523,7 +523,7 @@ namespace Firefly
 		/// </summary>
 		void UpdateParticleSystems()
 		{
-			float entrySpeed = doEffectEditor ? (EffectEditor.Instance.effectSpeed * currentBody.strengthMultiplier) : GetAdjustedEntrySpeed();
+			float entrySpeed = GetAdjustedEntrySpeed();
 
 			// check if we should actually do the particles
 			if (entrySpeed < currentBody.particleThreshold)
@@ -663,7 +663,7 @@ namespace Firefly
 
 				EffectEditor editor = EffectEditor.Instance;
 
-				float entrySpeed = doEffectEditor ? (editor.effectSpeed * currentBody.strengthMultiplier) : GetAdjustedEntrySpeed();
+				float entrySpeed = GetAdjustedEntrySpeed();
 
 				// update particle stuff like strength and direction
 				if (fxVessel.hasParticles) UpdateParticleSystems();
@@ -682,7 +682,7 @@ namespace Firefly
 				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
 				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-				// particle properties
+				// particle properties, setting the VP matrix separately
 				for (int i = 0; i < fxVessel.particleMaterials.Count; i++)
 				{
 					fxVessel.particleMaterials[i].SetMatrix("_AirstreamVP", VP);
@@ -932,11 +932,11 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Returns the entry speed adjusted to the atmosphere parameters
+		/// Returns the entry speed adjusted to the atmosphere parameters, and takes the effect editor into account
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
-			return GetEntrySpeed() * currentBody.strengthMultiplier;
+			return doEffectEditor ? (EffectEditor.Instance.effectSpeed * currentBody.strengthMultiplier) : (GetEntrySpeed() * currentBody.strengthMultiplier);
 		}
 
 		/// <summary>

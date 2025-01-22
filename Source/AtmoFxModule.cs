@@ -59,6 +59,7 @@ namespace Firefly
 		public ParticleSystem chunkParticles;
 		public ParticleSystem alternateChunkParticles;
 		public ParticleSystem smokeParticles;
+		public bool areParticlesKilled = false;
 
 		public Camera airstreamCamera;
 		public RenderTexture airstreamTexture;
@@ -475,10 +476,14 @@ namespace Firefly
 		/// </summary>
 		void KillAllParticles()
 		{
+			if (fxVessel.areParticlesKilled) return;  // no need to constantly kill the particles
+
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				UpdateParticleRate(fxVessel.allParticles[i], 0f, 0f);
 			}
+
+			fxVessel.areParticlesKilled = true;
 		}
 
 		/// <summary>
@@ -532,6 +537,8 @@ namespace Firefly
 				return;
 			}
 
+			fxVessel.areParticlesKilled = false;
+
 			// rate
 			desiredRate = Mathf.Clamp01((entrySpeed - currentBody.particleThreshold) / 600f);
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
@@ -550,16 +557,12 @@ namespace Firefly
 
 			float lengthMultiplier = GetLengthMultiplier();
 
-			// sparks	
 			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * lengthMultiplier;
 
-			// chunks
 			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * lengthMultiplier;
 
-			// alternate chunks
 			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * lengthMultiplier;
 
-			// smoke
 			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(lengthMultiplier * 0.5f, 1f);
 
 			// directions

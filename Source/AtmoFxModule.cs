@@ -82,17 +82,19 @@ namespace Firefly
 
 		public bool doEffectEditor = false;
 
-		// Snippet taken from Reentry Particle Effects by pizzaoverhead
+		// finds the stock handler of the aero FX
 		AerodynamicsFX _aeroFX;
 		public AerodynamicsFX AeroFX
 		{
 			get
 			{
+				// if the private handle isn't assigned yet, then do it now
 				if (_aeroFX == null)
 				{
+					// find the object
 					GameObject fxLogicObject = GameObject.Find("FXLogic");
 					if (fxLogicObject != null)
-						_aeroFX = fxLogicObject.GetComponent<AerodynamicsFX>();
+						_aeroFX = fxLogicObject.GetComponent<AerodynamicsFX>();  // get the actual FX handling component
 				}
 				return _aeroFX;
 			}

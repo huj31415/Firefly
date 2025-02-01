@@ -378,7 +378,7 @@ namespace Firefly
 				FxEnvelopeModel envelope = new FxEnvelopeModel(
 					Utils.GetPartCfgName(part.partInfo.name),
 					model,
-					model.transform.lossyScale,
+					Utils.GetModelEnvelopeScale(part, model.transform),
 					new Vector3(1.05f, 1.07f, 1.05f));
 				fxVessel.fxEnvelope.Add(envelope);
 			}

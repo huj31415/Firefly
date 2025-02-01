@@ -71,12 +71,12 @@ namespace Firefly
 			for (int i = 0; i < fields.Count; i++)
 			{
 				KeyValuePair<string, Field> elem = fields.ElementAt(i);
-				object val = elem.Value;
+				object val = elem.Value.value;
 
-				// special cases, like float3
+				// special case for float3
 				if (elem.Value.valueType == ValueType.Float3)
 				{
-					Vector3 vec = (Vector3)elem.Value.value;
+					Vector3 vec = (Vector3)val;
 
 					val = string.Join(" ", vec.x, vec.y, vec.z);
 				}

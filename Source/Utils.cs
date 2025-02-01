@@ -147,6 +147,12 @@ namespace Firefly
 			);
 		}
 
+		public static Vector3 GetModelEnvelopeScale(Part part, Transform model)
+		{
+			if (part.name.Contains("GrapplingDevice") || part.name.Contains("smallClaw")) return model.localScale;
+			else return model.lossyScale;
+		}
+
 		public static Transform[] FindTaggedTransforms(Part part)
 		{
 			// finds transforms tagged with Icon_Hidden and only those with atmofx_envelope in their name

@@ -237,13 +237,15 @@ namespace Firefly
 			// select main body
 			string mainBody = vessel.mainBody.bodyName;
 
-			if (bodyConfigs.Contains(mainBody))  // only select if a config for the body exists
+			if (bodyConfigs.Contains(mainBody))
 			{
+				// only select if a config for the body exists
 				ui_bodyChoice = bodyConfigs.IndexOf(mainBody);
 				currentBody = mainBody;
 				config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
-			} else  // otherwise, go with the default
+			} else
 			{
+				// otherwise, go with the default
 				ui_bodyChoice = 0;
 				currentBody = "Default";
 				config = new BodyConfig(ConfigManager.Instance.defaultConfig);

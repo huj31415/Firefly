@@ -147,10 +147,22 @@ namespace Firefly
 			);
 		}
 
+		public static Vector3 VectorDivide(Vector3 a, Vector3 b)
+		{
+			return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+		}
+
+		// note - the output vector is actually a result of (1 / result), to make the shader code use multiplication instead of division
 		public static Vector3 GetModelEnvelopeScale(Part part, Transform model)
 		{
-			if (part.name.Contains("GrapplingDevice") || part.name.Contains("smallClaw")) return model.localScale;
-			else return model.lossyScale;
+			if (part.name.Contains("GrapplingDevice") || part.name.Contains("smallClaw"))
+			{
+				return VectorDivide(Vector3.one, model.localScale);
+			}
+			else
+			{
+				return VectorDivide(Vector3.one, model.lossyScale);
+			}
 		}
 
 		public static Transform[] FindTaggedTransforms(Part part)

@@ -4,6 +4,21 @@ using UnityEngine;
 
 namespace Firefly
 {
+	/// <summary>
+	/// Stores a pair of floats
+	/// </summary>
+	public struct FloatPair
+	{
+		public float x;
+		public float y;
+
+		public FloatPair(float x, float y)
+		{
+			this.x = x;
+			this.y = y;
+		}
+	}
+
 	public static class AtmoFxLayers
 	{
 		public const int Spacecraft = 0;

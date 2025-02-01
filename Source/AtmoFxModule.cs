@@ -6,21 +6,6 @@ using UnityEngine.Rendering;
 namespace Firefly
 {
 	/// <summary>
-	/// Stores a pair of floats
-	/// </summary>
-	public struct FloatPair
-	{
-		public float x;
-		public float y;
-
-		public FloatPair(float x, float y)
-		{
-			this.x = x;
-			this.y = y;
-		}
-	}
-
-	/// <summary>
 	/// Stores the data of an fx envelope renderer
 	/// </summary>
 	public struct FxEnvelopeModel

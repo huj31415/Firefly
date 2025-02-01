@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static Firefly.ModSettings;
 
 namespace Firefly
 {
@@ -239,17 +238,25 @@ namespace Firefly
 			{
 				for (int i = 0; i < nodes.Length; i++)
 				{
-					bool success = ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
-					Logging.Log($"Processing planet pack cfg '{nodes[i].name}'");
-
-					if (!success)
+					try
 					{
-						Logging.Log("Planet pack cfg can't be registered");
-						continue;
-					}
+						bool success = ProcessPlanetPackNode(nodes[i], out PlanetPackConfig cfg);
+						Logging.Log($"Processing planet pack cfg '{nodes[i].name}'");
 
-					Logging.Log($"Successfully registered planet pack cfg '{nodes[i].name}'");
-					planetPackConfigs.Add(cfg);
+						if (!success)
+						{
+							Logging.Log("Planet pack cfg can't be registered");
+							continue;
+						}
+
+						Logging.Log($"Successfully registered planet pack cfg '{nodes[i].name}'");
+						planetPackConfigs.Add(cfg);
+					} 
+					catch (Exception e)  // catching plain exception, to then log it
+					{
+						Logging.Log($"Exception while loading planet pack {nodes[i].name}.");
+						Logging.Log(e.ToString());
+					}
 				}
 			}
 
@@ -263,16 +270,24 @@ namespace Firefly
 				// iterate over every node and store the data
 				for (int i = 0; i < urlConfigs.Length; i++)
 				{
-					bool success = ProcessSingleNode(urlConfigs[i], out BodyConfig body);
-
-					// couldn't load the config
-					if (!success)
+					try
 					{
-						Logging.Log("Body couldn't be loaded");
-						continue;
-					}
+						bool success = ProcessSingleNode(urlConfigs[i], out BodyConfig body);
 
-					bodyConfigs.Add(body.bodyName, body);
+						// couldn't load the config
+						if (!success)
+						{
+							Logging.Log("Body couldn't be loaded");
+							continue;
+						}
+
+						bodyConfigs.Add(body.bodyName, body);
+					}
+					catch (Exception e)  // catching plain exception, to then log it
+					{
+						Logging.Log($"Exception while loading config for {urlConfigs[i].config.GetValue("name")}.");
+						Logging.Log(e.ToString());
+					}
 				}
 			}
 
@@ -402,19 +417,25 @@ namespace Firefly
 			// read the affected body array
 			string array = node.GetValue("affected_bodies");
 
-			string[] strings = array.Split(',');
-			for (int i = 0; i < strings.Length; i++)
+			if (!string.IsNullOrEmpty(array))
 			{
-				strings[i] = strings[i].Trim();
-			}
+				string[] strings = array.Split(',');
+				for (int i = 0; i < strings.Length; i++)
+				{
+					strings[i] = strings[i].Trim();
+				}
 
-			if (strings.Length < 1)
+				if (strings.Length < 1)
+				{
+					Logging.Log("WARNING: Planet pack config affects no bodies");
+					return false;
+				}
+
+				cfg.affectedBodies = strings;
+			} else
 			{
-				Logging.Log("Planet pack config has zero affected bodies, it will not have any effect");
-				return false;
+				isFormatted = false;
 			}
-
-			cfg.affectedBodies = strings;
 
 			// is the config formatted correctly?
 			if (!isFormatted)

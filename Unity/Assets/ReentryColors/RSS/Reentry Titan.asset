@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae5577b8659e1b547a5381127ccb3554, type: 3}
+  m_Name: Reentry Titan
+  m_EditorClassIdentifier: 
+  glow: {r: 1.9766747, g: 0.8250364, b: 0.5174541, a: 1}
+  glowHot: {r: 4.237095, g: 1.9965369, b: 1.4419433, a: 1}
+  trailPrimary: {r: 5.992157, g: 3.1058824, b: 1.9764706, a: 1}
+  trailSecondary: {r: 2.1185474, g: 0.776431, b: 0.36603177, a: 1}
+  trailTertiary: {r: 1.1607844, g: 1.254902, b: 2.6039217, a: 1}
+  wrapLayer: {r: 3.7781744, g: 2.512189, b: 1.0286129, a: 1}
+  wrapStreak: {r: 0.59607846, g: 1.3647059, b: 3.2470589, a: 1}
+  shockwave: {r: 3.7781744, g: 1.942552, b: 1.2078432, a: 1}

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae5577b8659e1b547a5381127ccb3554, type: 3}
+  m_Name: Reentry Jupiter
+  m_EditorClassIdentifier: 
+  glow: {r: 1.9766747, g: 0.8250364, b: 0.5174541, a: 1}
+  glowHot: {r: 4.237095, g: 1.9965369, b: 1.4419433, a: 1}
+  trailPrimary: {r: 3.4253037, g: 2.4551313, b: 4.813983, a: 1}
+  trailSecondary: {r: 0.8156863, g: 0.15686275, b: 4.3607845, a: 1}
+  trailTertiary: {r: 1.3340966, g: 0.2711717, b: 1.9914774, a: 1}
+  wrapLayer: {r: 2.2431374, g: 0.39215687, b: 2.9960785, a: 1}
+  wrapStreak: {r: 5.2164755, g: 0.5735392, b: 0.5462278, a: 1}
+  shockwave: {r: 0.10142696, g: 0.26527053, b: 1.802279, a: 1}

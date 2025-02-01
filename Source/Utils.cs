@@ -205,12 +205,7 @@ namespace Firefly
 			Transform transform = vessel.GetTransform();
 			Vector3 velocity = vessel.srf_velocity.normalized;
 
-			float angle = Vector3.Angle(transform.forward, velocity);
-
-			if (float.IsNaN(angle))
-			{
-				angle = 0.0f;
-			}
+			float angle = Vector3.Angle(transform.forward, velocity) * Mathf.Deg2Rad;
 
 			return angle;
 		}

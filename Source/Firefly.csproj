@@ -17,7 +17,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <IntermediateOutputPath>..\obj\Debug\</IntermediateOutputPath>
+    <OutputPath>..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +26,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <IntermediateOutputPath>..\obj\Release\</IntermediateOutputPath>
+    <OutputPath>..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -236,13 +238,32 @@
     <Compile Include="AtmoFxModule.cs" />
     <Compile Include="EventManager.cs" />
     <Compile Include="AssetLoader.cs" />
+    <Compile Include="GUI\ColorPickerWindow.cs" />
+    <Compile Include="GUI\EffectEditor.cs" />
+    <Compile Include="GUI\GuiUtils.cs" />
+    <Compile Include="GUI\WindowManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SettingsManager.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Versioning.cs" />
-    <Compile Include="WindowManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Unity\Atmospheric Entry KSP\Assets\AtmosphericEntry\Shaders\ReentryShader.shader">
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\CommonFunctions.cginc">
+      <Link>CommonFunctions.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\BowshockPass.cginc">
+      <Link>BowshockPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\GlowPass.cginc">
+      <Link>GlowPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\EffectPasses\MainPass.cginc">
+      <Link>MainPass.cginc</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\ParticleShader.shader">
+      <Link>ParticleShader.shader</Link>
+    </None>
+    <None Include="..\..\Unity\Atmospheric Entry KSP\Assets\AtmosphericFx\Shaders\ReentryShader.shader">
       <Link>ReentryShader.shader</Link>
     </None>
   </ItemGroup>

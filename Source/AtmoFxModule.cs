@@ -1,8 +1,7 @@
-using Expansions.Missions.Editor;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Firefly
 {
@@ -22,23 +21,45 @@ namespace Firefly
 	}
 
 	/// <summary>
+	/// Stores the data of an fx envelope renderer
+	/// </summary>
+	public struct FxEnvelopeModel
+	{
+		public string partName;
+		public Renderer renderer;
+
+		public Vector3 modelScale;
+		public Vector3 envelopeScaleFactor;
+
+		public FxEnvelopeModel(string partName, Renderer renderer, Vector3 modelScale, Vector3 envelopeScaleFactor)
+		{
+			this.partName = partName;
+			this.renderer = renderer;
+
+			this.modelScale = modelScale;
+			this.envelopeScaleFactor = envelopeScaleFactor;
+		}
+	}
+
+	/// <summary>
 	/// Stores the data and instances of the effects
 	/// </summary>
 	public class AtmoFxVessel
 	{
-		public List<Renderer> fxEnvelope = new List<Renderer>();
-		public List<Renderer> particleFxEnvelope = new List<Renderer>();
+		public List<FxEnvelopeModel> fxEnvelope = new List<FxEnvelopeModel>();
+
+		public CommandBuffer commandBuffer;
 
 		public bool hasParticles = false;
 
+		public List<Material> particleMaterials = new List<Material>();
 		public List<ParticleSystem> allParticles = new List<ParticleSystem>();
 		public List<FloatPair> orgParticleRates = new List<FloatPair>();
 		public ParticleSystem sparkParticles;
 		public ParticleSystem chunkParticles;
 		public ParticleSystem alternateChunkParticles;
 		public ParticleSystem smokeParticles;
-
-		public Mesh totalEnvelope;
+		public bool areParticlesKilled = false;
 
 		public Camera airstreamCamera;
 		public RenderTexture airstreamTexture;
@@ -51,8 +72,7 @@ namespace Firefly
 		public float vesselBoundRadius;
 		public float vesselMaxSize;
 
-		public float lengthMultiplier = 1f;
-		public float speedMultiplier = 1f;
+		public float baseLengthMultiplier = 1f;
 
 		public Material material;
 	}
@@ -65,13 +85,17 @@ namespace Firefly
 		public AtmoFxVessel fxVessel;
 		public bool isLoaded = false;
 
-		bool debugMode = false;
+		public bool debugMode = false;
 
 		float lastFixedTime;
 		float desiredRate;
 		float lastSpeed;
 
+		double vslLastAlt;
+
 		public BodyConfig currentBody;
+
+		public bool doEffectEditor = false;
 
 		// Snippet taken from Reentry Particle Effects by pizzaoverhead
 		AerodynamicsFX _aeroFX;
@@ -99,7 +123,7 @@ namespace Firefly
 		/// <summary>
 		/// Loads a vessel, instantiates stuff like the camera and rendertexture, also creates the entry velopes and particle system
 		/// </summary>
-		void CreateVesselFx()
+		public void CreateVesselFx()
 		{
 			if (!WindowManager.Instance.tgl_EffectToggle) return;
 
@@ -164,16 +188,6 @@ namespace Firefly
 				return;
 			}
 
-			// reset part cache
-			ResetPartModelCache();
-
-			// create the fx envelopes
-			UpdateFxEnvelopes(material);
-			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
-
-			// create the particles
-			if (!ConfigManager.Instance.modSettings.disableParticles) CreateParticleSystems();  // run the function only if they're enabled in settings
-
 			// calculate the vessel bounds
 			bool correctBounds = CalculateVesselBounds(fxVessel, vessel, true);
 			if (!correctBounds)
@@ -185,10 +199,100 @@ namespace Firefly
 			fxVessel.airstreamCamera.farClipPlane = Mathf.Clamp(fxVessel.vesselBoundExtents.magnitude * 2f, 1f, 1000f);  // set the far clip plane so the segment occlusion works
 
 			// set the current body
-			UpdateCurrentBody(vessel.mainBody);
+			UpdateCurrentBody(vessel.mainBody, true);
+
+			// create the command buffer
+			InitializeCommandBuffer();
+
+			// reset part cache
+			ResetPartModelCache();
+
+			// create the fx envelopes
+			UpdateFxEnvelopes();
+			fxVessel.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);  // Set the airstream depth texture parameter
+
+			// populate the command buffer
+			PopulateCommandBuffer();
+
+			// create the particles
+			if (!(bool)ModSettings.I["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
 
 			Logging.Log("Finished loading vessel");
 			isLoaded = true;
+		}
+
+		public void InitializeCommandBuffer()
+		{
+			fxVessel.commandBuffer = new CommandBuffer();
+			fxVessel.commandBuffer.name = $"Firefly atmospheric effects [{vessel.vesselName}]";
+			fxVessel.commandBuffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
+			CameraManager.Instance.AddCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
+		}
+		
+		/// <summary>
+		/// Populates the command buffer with the envelope
+		/// </summary>
+		public void PopulateCommandBuffer()
+		{
+			fxVessel.commandBuffer.Clear();
+
+			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
+			{
+				FxEnvelopeModel envelope = fxVessel.fxEnvelope[i];
+
+				// set model values
+				fxVessel.commandBuffer.SetGlobalVector("_ModelScale", envelope.modelScale);
+				fxVessel.commandBuffer.SetGlobalVector("_EnvelopeScaleFactor", envelope.envelopeScaleFactor);
+
+				// part overrides
+				BodyColors colors = new BodyColors(currentBody.colors);  // create the original colors
+				if (ConfigManager.Instance.partConfigs.ContainsKey(envelope.partName))
+				{
+					Logging.Log("Envelope has a part override config");
+					BodyColors overrideColor = ConfigManager.Instance.partConfigs[envelope.partName];
+
+					// override the colors with the override
+					foreach (string key in overrideColor.fields.Keys)
+					{
+						if (overrideColor[key] != null) colors[key] = overrideColor[key];
+					}
+				}
+
+				// is asteroid? if yes set randomness factor to 1, so the shader draws colored streaks
+				float randomnessFactor = 0f;
+				if (envelope.partName == "PotatoRoid" || envelope.partName == "PotatoComet")
+				{
+					Logging.Log("Potatoroid - setting the randomness factor to 1");
+					randomnessFactor = 1f;
+				}
+				fxVessel.commandBuffer.SetGlobalVector("_RandomnessFactor", Vector2.one * randomnessFactor);
+
+				// add commands to set the color properties
+				fxVessel.commandBuffer.SetGlobalColor("_GlowColor", colors["glow"]);
+				fxVessel.commandBuffer.SetGlobalColor("_HotGlowColor", colors["glow_hot"]);
+
+				fxVessel.commandBuffer.SetGlobalColor("_PrimaryColor", colors["trail_primary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_SecondaryColor", colors["trail_secondary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_TertiaryColor", colors["trail_tertiary"]);
+				fxVessel.commandBuffer.SetGlobalColor("_StreakColor", colors["trail_streak"]);
+
+				fxVessel.commandBuffer.SetGlobalColor("_LayerColor", colors["wrap_layer"]);
+				fxVessel.commandBuffer.SetGlobalColor("_LayerStreakColor", colors["wrap_streak"]);
+
+				fxVessel.commandBuffer.SetGlobalColor("_ShockwaveColor", colors["shockwave"]);
+
+				// draw the mesh
+				fxVessel.commandBuffer.DrawRenderer(envelope.renderer, fxVessel.material);
+			}
+		}
+
+		/// <summary>
+		/// Destroys and disposes the command buffer
+		/// </summary>
+		public void DestroyCommandBuffer()
+		{
+			CameraManager.Instance.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
+			fxVessel.commandBuffer.Dispose();
 		}
 
 		/// <summary>
@@ -203,96 +307,62 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Creates one envelope mesh, with a given parent, mesh and material
-		/// </summary>
-		MeshRenderer InstantiateEnvelopeMesh(Transform parent, Mesh mesh, Material material, bool premade)
-		{
-			// create envelope object
-			Transform envelope = new GameObject("atmofx_envelope_generated").transform;
-			envelope.gameObject.layer = AtmoFxLayers.Fx;
-			envelope.parent = parent;
-
-			envelope.localPosition = Vector3.zero;
-			envelope.localRotation = Quaternion.identity;
-			envelope.localScale = new Vector3(premade ? 1f : 1.05f, premade ? 1f : 1.07f, premade ? 1f : 1.05f);
-
-			// add mesh filter and renderer to the envelope
-			MeshFilter filter = envelope.gameObject.AddComponent<MeshFilter>();
-			MeshRenderer renderer = envelope.gameObject.AddComponent<MeshRenderer>();
-
-			// initialize renderer
-			filter.sharedMesh = mesh;
-			renderer.sharedMaterial = material;
-			renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-			// set model-specific properties
-			MaterialPropertyBlock properties = new MaterialPropertyBlock();
-			properties.SetVector("_ModelScale", parent.lossyScale);
-			properties.SetVector("_EnvelopeScaleFactor", new Vector3(1.05f, 1.07f, 1.05f));
-			renderer.SetPropertyBlock(properties);
-
-			return renderer;
-		}
-
-		/// <summary>
 		/// Processes one part and creates the envelope mesh for it
 		/// </summary>
-		void CreatePartEnvelope(Part part, Material material)
+		void CreatePartEnvelope(Part part)
 		{
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
+			if (fxEnvelopes.Length < 1) fxEnvelopes = Utils.FindTaggedTransforms(part);
+
 			if (fxEnvelopes.Length > 0)
 			{
-				Logging.Log($"Part {part.name} has a defined effect envelope. Skipping collider search.");
+				Logging.Log($"Part {part.name} has a defined effect envelope. Skipping mesh search.");
 
 				for (int j = 0; j < fxEnvelopes.Length; j++)
 				{
-					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter parentFilter)) continue;
+					// check if active
+					if (!fxEnvelopes[j].gameObject.activeInHierarchy) continue;
 
-					// disable the mesh
-					if (fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) parentRenderer.enabled = false;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter _)) continue;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
-					// needs to be a separate transform, otherwise it breaks for some reason
-					MeshRenderer r = InstantiateEnvelopeMesh(fxEnvelopes[j], parentFilter.mesh, material, true);
-					fxVessel.fxEnvelope.Add(r);
+					parentRenderer.enabled = false;
 
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(r);
+					// create the envelope
+					FxEnvelopeModel envelope = new FxEnvelopeModel(
+						Utils.GetPartCfgName(part.partInfo.name),
+						parentRenderer,
+						Vector3.one,
+						Vector3.one
+						);
+					fxVessel.fxEnvelope.Add(envelope);
 				}
 
 				// skip model search
 				return;
 			}
 
-			if (ConfigManager.Instance.modSettings.useColliders)
+			// TODO: reminder that collider support is disabled for commandbuffer branch
+
+			List<Renderer> models = part.FindModelRenderersCached();
+			for (int j = 0; j < models.Count; j++)
 			{
-				Collider[] colliders = part.GetPartColliders();
-				for (int j = 0; j < colliders.Length; j++)
+				Renderer model = models[j];
+
+				// check if active
+				if (!model.gameObject.activeInHierarchy) continue;
+
+				// check for wheel flare
+				if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
+
+				// check for layers
+				if (Utils.CheckLayerModel(model.transform)) continue;
+
+				// is skinned
+				bool isSkinnedRenderer = model.TryGetComponent(out SkinnedMeshRenderer _);
+
+				if (!isSkinnedRenderer)  // if it's a normal model, check if it has a filter and a mesh
 				{
-					MeshCollider collider = colliders[j] as MeshCollider;
-					if (collider == null)
-					{
-						Logging.Log($"Collider {colliders[j].gameObject.name} isn't a mesh, ignoring");
-						continue;
-					}
-
-					MeshRenderer renderer = InstantiateEnvelopeMesh(collider.transform, collider.sharedMesh, material, false);
-					fxVessel.fxEnvelope.Add(renderer);
-
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
-				}
-			}
-			else
-			{
-				List<Renderer> models = part.FindModelRenderersCached();
-				for (int j = 0; j < models.Count; j++)
-				{
-					Renderer model = models[j];
-
-					// check for wheel flare
-					if (Utils.CheckWheelFlareModel(part, model.gameObject.name)) continue;
-
-					// check for layers
-					if (Utils.CheckLayerModel(model.transform)) continue;
-
 					// try getting the mesh filter
 					bool hasMeshFilter = model.TryGetComponent(out MeshFilter filter);
 					if (!hasMeshFilter) continue;
@@ -300,63 +370,36 @@ namespace Firefly
 					// try getting the mesh
 					Mesh mesh = filter.sharedMesh;
 					if (mesh == null) continue;
-
-					MeshRenderer renderer = InstantiateEnvelopeMesh(model.transform, mesh, material, false);
-					fxVessel.fxEnvelope.Add(renderer);
-
-					if (Utils.IsPartBoundCompatible(part)) fxVessel.particleFxEnvelope.Add(renderer);
 				}
+
+				if (!Utils.IsPartBoundCompatible(part)) continue;
+
+				// create the envelope
+				FxEnvelopeModel envelope = new FxEnvelopeModel(
+					Utils.GetPartCfgName(part.partInfo.name),
+					model,
+					Utils.GetModelEnvelopeScale(part, model.transform),
+					new Vector3(1.05f, 1.07f, 1.05f));
+				fxVessel.fxEnvelope.Add(envelope);
 			}
 		}
 
-		/// <summary>
-		/// Creates the effect envelopes
-		/// </summary>
-		void UpdateFxEnvelopes(Material material)
+		void UpdateFxEnvelopes()
 		{
 			Logging.Log($"Updating fx envelopes for vessel {vessel.name}");
 			Logging.Log($"Found {vessel.parts.Count} parts on the vessel");
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.particleFxEnvelope.Clear();
 
 			for (int i = 0; i < vessel.parts.Count; i++)
 			{
 				Part part = vessel.parts[i];
 				if (!Utils.IsPartCompatible(part)) continue;
 
-				CreatePartEnvelope(part, material);
+				CreatePartEnvelope(part);
 			}
-
-			// set the vessel position to zero, to make combining possible
-			Vector3 orgPosition = vessel.transform.position;
-			vessel.transform.position = Vector3.zero;
-
-			// combine the envelope meshes
-			CombineInstance[] combine = new CombineInstance[fxVessel.particleFxEnvelope.Count];
-			for (int i = 0; i < combine.Length; i++)
-			{
-				MeshFilter filter = fxVessel.particleFxEnvelope[i].GetComponent<MeshFilter>();
-
-				// set the part position to match the vessel
-				filter.transform.position -= orgPosition;
-
-				combine[i].mesh = filter.sharedMesh;
-				combine[i].transform = filter.transform.localToWorldMatrix;
-
-				// reset the part position
-				filter.transform.position += orgPosition;
-			}
-			fxVessel.totalEnvelope = new Mesh();
-			fxVessel.totalEnvelope.CombineMeshes(combine);
-
-			// reset the vessel position back to original
-			vessel.transform.position = orgPosition;
 		}
 
-		/// <summary>
-		/// Creates all particle systems for the vessel
-		/// </summary>
 		void CreateParticleSystems()
 		{
 			Logging.Log("Creating particle systems");
@@ -371,33 +414,31 @@ namespace Firefly
 				if (t.TryGetComponent(out ParticleSystem _)) Destroy(t.gameObject);
 			}
 
+			fxVessel.particleMaterials.Clear();
 			fxVessel.allParticles.Clear();
 			fxVessel.orgParticleRates.Clear();
 
 			// spawn particle systems
-			fxVessel.sparkParticles = Instantiate(AssetLoader.Instance.sparkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.chunkParticles = Instantiate(AssetLoader.Instance.chunkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.alternateChunkParticles = Instantiate(AssetLoader.Instance.alternateChunkParticles, vessel.transform).GetComponent<ParticleSystem>();
-			fxVessel.smokeParticles = Instantiate(AssetLoader.Instance.smokeParticles, vessel.transform).GetComponent<ParticleSystem>();
+			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles);
+			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles);
+			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles);
+			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles);
 
-			// register the particle systems
-			StoreParticleSystem(fxVessel.sparkParticles);
-			StoreParticleSystem(fxVessel.chunkParticles);
-			StoreParticleSystem(fxVessel.alternateChunkParticles);
-			StoreParticleSystem(fxVessel.smokeParticles);
-
-			// initialize particle systems
-			fxVessel.sparkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.chunkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.alternateChunkParticles.transform.rotation = Quaternion.identity;
-			fxVessel.smokeParticles.transform.rotation = Quaternion.identity;
+			// disable if needed
+			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
+			if ((bool)ModSettings.I["disable_debris"])
+			{
+				fxVessel.chunkParticles.gameObject.SetActive(false);
+				fxVessel.alternateChunkParticles.gameObject.SetActive(false);
+			}
+			if ((bool)ModSettings.I["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
 
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
 
 				ParticleSystem.ShapeModule shapeModule = ps.shape;
-				shapeModule.mesh = fxVessel.totalEnvelope;
+				shapeModule.scale = fxVessel.vesselBoundExtents * 2f;
 
 				ParticleSystem.VelocityOverLifetimeModule velocityModule = ps.velocityOverLifetime;
 				velocityModule.radialMultiplier = 1f;
@@ -406,15 +447,28 @@ namespace Firefly
 			}
 		}
 
-		/// <summary>
-		/// Stores the rate of a given particle system in the list
-		/// </summary>
-		void StoreParticleSystem(ParticleSystem ps)
+		ParticleSystem CreateParticleSystem(GameObject prefab)
 		{
+			// instantiate prefab
+			ParticleSystem ps = Instantiate(prefab, vessel.transform).GetComponent<ParticleSystem>();
 			fxVessel.allParticles.Add(ps);
 
+			// store original emission rate
 			ParticleSystem.MinMaxCurve curve = ps.emission.rateOverTime;
 			fxVessel.orgParticleRates.Add(new FloatPair(curve.constantMin, curve.constantMax));
+
+			// initialize transform pos and rot
+			ps.transform.localRotation = Quaternion.identity;
+			ps.transform.localPosition = fxVessel.vesselBoundCenter;
+
+			// set material texture
+			ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
+			renderer.material = new Material(renderer.sharedMaterial);
+			renderer.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+
+			fxVessel.particleMaterials.Add(renderer.material);
+
+			return ps;
 		}
 
 		/// <summary>
@@ -422,10 +476,14 @@ namespace Firefly
 		/// </summary>
 		void KillAllParticles()
 		{
+			if (fxVessel.areParticlesKilled) return;  // no need to constantly kill the particles
+
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				UpdateParticleRate(fxVessel.allParticles[i], 0f, 0f);
 			}
+
+			fxVessel.areParticlesKilled = true;
 		}
 
 		/// <summary>
@@ -470,15 +528,19 @@ namespace Firefly
 		/// </summary>
 		void UpdateParticleSystems()
 		{
+			float entrySpeed = GetAdjustedEntrySpeed();
+
 			// check if we should actually do the particles
-			if (GetAdjustedEntrySpeed() < currentBody.particleThreshold)
+			if (entrySpeed < currentBody.particleThreshold)
 			{
 				KillAllParticles();
 				return;
 			}
 
+			fxVessel.areParticlesKilled = false;
+
 			// rate
-			desiredRate = Mathf.Clamp01((GetAdjustedEntrySpeed() - currentBody.particleThreshold) / 600f);
+			desiredRate = Mathf.Clamp01((entrySpeed - currentBody.particleThreshold) / 600f);
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
@@ -490,20 +552,18 @@ namespace Firefly
 			}
 
 			// world velocity
-			Vector3 direction = vessel.transform.InverseTransformDirection(GetEntryVelocity());
-			Vector3 worldVel = -GetEntryVelocity();
+			Vector3 direction = doEffectEditor ? EffectEditor.Instance.effectDirection : vessel.transform.InverseTransformDirection(GetEntryVelocity());
+			Vector3 worldVel = doEffectEditor ? -EffectEditor.Instance.GetWorldDirection() : -GetEntryVelocity();
 
-			// sparks	
-			fxVessel.sparkParticles.transform.localPosition = direction * -0.5f * fxVessel.lengthMultiplier;
+			float lengthMultiplier = GetLengthMultiplier();
 
-			// chunks
-			fxVessel.chunkParticles.transform.localPosition = direction * -1.24f * fxVessel.lengthMultiplier;
+			fxVessel.sparkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -0.5f * lengthMultiplier;
 
-			// alternate chunks
-			fxVessel.alternateChunkParticles.transform.localPosition = direction * -1.62f * fxVessel.lengthMultiplier;
+			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * lengthMultiplier;
 
-			// smoke
-			fxVessel.smokeParticles.transform.localPosition = direction * -2f * Mathf.Max(fxVessel.lengthMultiplier * 0.5f, 1f);
+			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * lengthMultiplier;
+
+			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(lengthMultiplier * 0.5f, 1f);
 
 			// directions
 			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);
@@ -521,20 +581,10 @@ namespace Firefly
 
 			isLoaded = false;
 
-			// destroy the fx envelope
-			foreach (var renderer in fxVessel.fxEnvelope)
-			{
-				if (renderer != null)
-				{
-					renderer.transform.SetParent(null);
-					Destroy(renderer.gameObject);
-				}
-			}
-
-			Destroy(fxVessel.totalEnvelope);
+			// destroy the commandbuffer
+			DestroyCommandBuffer();
 
 			fxVessel.fxEnvelope.Clear();
-			fxVessel.particleFxEnvelope.Clear();
 
 			if (!onlyEnvelopes)
 			{
@@ -593,24 +643,9 @@ namespace Firefly
 			RemoveVesselFx(false);
 		}
 
-		void Debug_ToggleEnvelopes()
-		{
-			bool state = fxVessel.fxEnvelope[0].gameObject.activeSelf;
-
-			for (int i = 0; i < fxVessel.fxEnvelope.Count; i++)
-			{
-				fxVessel.fxEnvelope[i].gameObject.SetActive(!state);
-			}
-		}
-
 		public void Update()
 		{
 			if (!AssetLoader.Instance.allAssetsLoaded) return;
-
-			// debug mode
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha0) && vessel == FlightGlobals.ActiveVessel) debugMode = !debugMode;
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha8) && vessel == FlightGlobals.ActiveVessel) Debug_ToggleEnvelopes();
-			if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Alpha9) && vessel == FlightGlobals.ActiveVessel) ReloadVessel();
 
 			// Reload if the vessel is marked for reloading
 			if (reloadDelayFrames > 0 && vessel.loaded && !vessel.packed)
@@ -620,16 +655,23 @@ namespace Firefly
 					CreateVesselFx();
 				}
 			}
+		}
 
+		public void LateUpdate()
+		{
 			// Certain things only need to happen if we had a fixed update
 			if (Time.fixedTime != lastFixedTime && isLoaded)
 			{
 				lastFixedTime = Time.fixedTime;
 
-				// update particles
+				EffectEditor editor = EffectEditor.Instance;
+
+				float entrySpeed = GetAdjustedEntrySpeed();
+
+				// update particle stuff like strength and direction
 				if (fxVessel.hasParticles) UpdateParticleSystems();
 
-				// position the cameras
+				// position the camera where it can see the entire vessel
 				fxVessel.airstreamCamera.transform.position = GetOrthoCameraPosition();
 				fxVessel.airstreamCamera.transform.LookAt(vessel.transform.TransformPoint(fxVessel.vesselBoundCenter));
 
@@ -639,19 +681,37 @@ namespace Firefly
 				Matrix4x4 VP = P * V;
 
 				// update the material with dynamic properties
-				fxVessel.material.SetVector("_Velocity", GetEntryVelocity());
-				fxVessel.material.SetFloat("_EntrySpeed", GetAdjustedEntrySpeed());
+				fxVessel.material.SetVector("_Velocity", doEffectEditor ? editor.GetWorldDirection() : GetEntryVelocity());
+				fxVessel.material.SetFloat("_EntrySpeed", entrySpeed);
 				fxVessel.material.SetMatrix("_AirstreamVP", VP);
 
-				fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
-				fxVessel.material.SetFloat("_FxState", AeroFX.state);
-				fxVessel.material.SetFloat("_AngleOfAttack", Utils.GetAngleOfAttack(vessel));
-				fxVessel.material.SetFloat("_ShadowPower", 0f);
-				fxVessel.material.SetFloat("_VelDotPower", 0f);
-				fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
-            }
+				// particle properties, setting the VP matrix separately
+				for (int i = 0; i < fxVessel.particleMaterials.Count; i++)
+				{
+					fxVessel.particleMaterials[i].SetMatrix("_AirstreamVP", VP);
+				}
+
+				UpdateMaterialProperties();
+			}
+
+			// Check if the ship goes outside of the atmosphere (and the speed is low enough), unload the effects if so
+			if (vessel.altitude > vessel.mainBody.atmosphereDepth && isLoaded && !doEffectEditor)
+			{
+				RemoveVesselFx(false);
+			}
+
+			// Check if the vessel is not marked for reloading and if it's entering the atmosphere
+			double descentRate = vessel.altitude - vslLastAlt;
+			vslLastAlt = vessel.altitude;
+			if (reloadDelayFrames < 1 && descentRate < 0 && vessel.altitude <= vessel.mainBody.atmosphereDepth && !isLoaded)
+			{
+				CreateVesselFx();
+			}
 		}
 
+		/// <summary>
+		/// Debug drawings
+		/// </summary>
 		public void OnGUI()
 		{
 			if (!debugMode || !isLoaded) return;
@@ -675,6 +735,11 @@ namespace Firefly
 			DrawingUtils.DrawArrow(camTransform.position, camTransform.forward, camTransform.right, camTransform.up, Color.magenta);
 		}
 
+		/// <summary>
+		/// Does the necessary stuff during an SOI change, like enabling/disabling the effects and changing the color configs
+		/// Disables the effects on bodies without an atmosphere
+		/// Enables the effects if necessary
+		/// </summary>
 		public void OnVesselSOIChanged(CelestialBody body)
 		{
 			if (!body.atmosphere)
@@ -689,47 +754,57 @@ namespace Firefly
 				return;
 			}
 
-			UpdateCurrentBody(body);
+			UpdateCurrentBody(body, false);
 		}
 
 		/// <summary>
 		/// Updates the current body, and updates the properties
 		/// </summary>
-		private void UpdateCurrentBody(CelestialBody body)
+		private void UpdateCurrentBody(CelestialBody body, bool atLoad)
 		{
 			if (fxVessel != null)
 			{
-				ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
+				Logging.Log($"Updating current body for {vessel.name}");
 
-				currentBody = cfg;
-				fxVessel.lengthMultiplier = GetLengthMultiplier();
-				UpdateStaticMaterialProperties();
+				if (!doEffectEditor)
+				{
+					ConfigManager.Instance.TryGetBodyConfig(body.name, true, out BodyConfig cfg);
+					currentBody = cfg;
+				} else
+				{
+					currentBody = EffectEditor.Instance.config;
+				}
+				
+				if (!atLoad)
+				{
+					// reset the commandbuffer
+					DestroyCommandBuffer();
+					InitializeCommandBuffer();
+					PopulateCommandBuffer();
+				}
 			}
 		}
 
 		/// <summary>
-		/// Updates the static material properties
+		/// Updates the material properties
 		/// </summary>
-		void UpdateStaticMaterialProperties()
+		void UpdateMaterialProperties()
 		{
-			fxVessel.material.SetFloat("_LengthMultiplier", fxVessel.lengthMultiplier);
+			fxVessel.material.SetInt("_Hdr", CameraManager.Instance.ActualHdrState ? 1 : 0);
+			fxVessel.material.SetFloat("_FxState", doEffectEditor ? EffectEditor.Instance.effectState : AeroFX.state);
+			fxVessel.material.SetFloat("_AngleOfAttack", doEffectEditor ? 0f : Utils.GetAngleOfAttack(vessel));
+			fxVessel.material.SetFloat("_ShadowPower", 0f);
+			fxVessel.material.SetFloat("_VelDotPower", 0f);
+			fxVessel.material.SetFloat("_EntrySpeedMultiplier", 1f);
+
+			fxVessel.material.SetInt("_DisableBowshock", (bool)ModSettings.I["disable_bowshock"] ? 1 : 0);
+
+			fxVessel.material.SetFloat("_LengthMultiplier", GetLengthMultiplier());
 			fxVessel.material.SetFloat("_OpacityMultiplier", currentBody.opacityMultiplier);
 			fxVessel.material.SetFloat("_WrapFresnelModifier", currentBody.wrapFresnelModifier);
 
 			fxVessel.material.SetFloat("_StreakProbability", currentBody.streakProbability);
 			fxVessel.material.SetFloat("_StreakThreshold", currentBody.streakThreshold);
-
-			fxVessel.material.SetColor("_GlowColor", currentBody.colors.glow);
-			fxVessel.material.SetColor("_HotGlowColor", currentBody.colors.glowHot);
-
-			fxVessel.material.SetColor("_PrimaryColor", currentBody.colors.trailPrimary);
-			fxVessel.material.SetColor("_SecondaryColor", currentBody.colors.trailSecondary);
-			fxVessel.material.SetColor("_TertiaryColor", currentBody.colors.trailTertiary);
-
-			fxVessel.material.SetColor("_LayerColor", currentBody.colors.wrapLayer);
-			fxVessel.material.SetColor("_LayerStreakColor", currentBody.colors.wrapStreak);
-
-			fxVessel.material.SetColor("_ShockwaveColor", currentBody.colors.shockwave);
 		}
 
 		/// <summary>
@@ -749,16 +824,26 @@ namespace Firefly
 				List<Renderer> renderers = vsl.parts[i].FindModelRenderersCached();
 				for (int r = 0; r < renderers.Count; r++)
 				{
+					if (!renderers[r].gameObject.activeInHierarchy) continue;
+
+					// try getting the mesh filter
 					bool hasFilter = renderers[r].TryGetComponent(out MeshFilter meshFilter);
-					if (!hasFilter) continue;
-					if (meshFilter.mesh == null) continue;
+
+					// is skinned
+					bool isSkinnedRenderer = renderers[r].TryGetComponent(out SkinnedMeshRenderer skinnedModel);
+
+					if (!isSkinnedRenderer)  // if it's a normal model, check if it has a filter and a mesh
+					{
+						if (!hasFilter) continue;
+						if (meshFilter.mesh == null) continue;
+					}
 
 					// check if the mesh is legal
 					if (Utils.CheckLayerModel(renderers[r].transform)) continue;
 
 					// get the corners of the mesh
-					//meshFilter.mesh.RecalculateBounds();
-					Vector3[] corners = Utils.GetBoundCorners(meshFilter.mesh.bounds);
+					Bounds modelBounds = isSkinnedRenderer ? skinnedModel.localBounds : meshFilter.mesh.bounds;
+					Vector3[] corners = Utils.GetBoundCorners(modelBounds);
 
 					// create the transformation matrix
 					// part -> world -> vessel
@@ -796,6 +881,8 @@ namespace Firefly
 			fxVessel.vesselBoundExtents = vesselSize / 2f;
 			fxVessel.vesselBoundRadius = fxVessel.vesselBoundExtents.magnitude;
 
+			CalculateBaseLengthMultiplier();  // done after calculating bounds
+
 			return true;
 		}
 
@@ -812,53 +899,12 @@ namespace Firefly
 		/// </summary>
 		float GetEntrySpeed()
 		{
-			float spd = 0f;
+			// Pretty much just the FxScalar, but scaled with the strength base value, with an added modifier for the mach effects
+			float spd = AeroFX.FxScalar * (float)ModSettings.I["strength_base"] * Mathf.Lerp(0.13f, 1f, AeroFX.state);
 
-			if (WindowManager.Instance.tgl_SpeedMethod)
-			{
-				// get the vessel speed in mach (yes, this is pretty much the same as normal m/s measurement, but it automatically detects a vacuum)
-				double mach = vessel.mainBody.GetSpeedOfSound(vessel.staticPressurekPa, vessel.atmDensity);
-				double vesselMach = vessel.mach;
-
-				// get the stock aeroFX scalar
-				float aeroFxScalar = AeroFX.FxScalar + 0.26f;  // adding 0.26 and body scalar to make the effect start earlier
-
-				// apply the body config modifiers
-				for (int i = 0; i < currentBody.transitionModifiers.Length; i++)
-				{
-					TransitionModifier mod = currentBody.transitionModifiers[i];
-
-					float value = mod.value * (mod.stockfxDependent ? (1f - AeroFX.FxScalar) : 1f);
-
-					switch (mod.operation)
-					{
-						case ModifierOperation.ADD:
-							aeroFxScalar += value;
-							break;
-						case ModifierOperation.SUBTRACT:
-							aeroFxScalar -= value;
-							break;
-						case ModifierOperation.MULTIPLY:
-							aeroFxScalar *= Mathf.Max(value, mod.stockfxDependent ? 1f : 0f);  // if the effect is stockfx dependent then clamp it to not go below 1
-							break;
-						case ModifierOperation.DIVIDE:
-							aeroFxScalar /= value;
-							break;
-						default:
-							break;
-					}
-				}
-
-				// convert to m/s
-				spd = (float)(mach * vesselMach);
-				spd = (float)(spd * vessel.srf_velocity.normalized.magnitude);
-				spd *= aeroFxScalar;
-			} else
-			{
-				spd = AeroFX.FxScalar * 2800f * Mathf.Lerp(0.13f, 1f, AeroFX.state);
-			}
-
-			float delta = Mathf.Abs(spd - lastSpeed) / 2800f;
+			// Smoothly interpolate the last frame's and this frame's results
+			// automatically adjusts the t value based on how much the results differ
+			float delta = Mathf.Abs(spd - lastSpeed) / (float)ModSettings.I["strength_base"];
 			spd = Mathf.Lerp(lastSpeed, spd, TimeWarp.deltaTime * (1f + delta * 2f));
 
 			lastSpeed = spd;
@@ -867,9 +913,9 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Calculates the speed multiplier
+		/// Calculates the base length multiplier, with the vessel's radius
 		/// </summary>
-		float GetLengthMultiplier()
+		void CalculateBaseLengthMultiplier()
 		{
 			// the Apollo capsule has a radius of around 2, which makes it a good reference
 			float baseRadius = fxVessel.vesselBoundRadius / 2f;
@@ -877,22 +923,23 @@ namespace Firefly
 			// gets the final result
 			// for example, if the base radius is 2 then the result will be 1.4
 			// or if the base radius is 3 then the result will be 1.8
-			float result = 1f + (baseRadius - 1f) * 0.3f;
-
-			return result * currentBody.lengthMultiplier;
+			fxVessel.baseLengthMultiplier = 1f + (baseRadius - 1f) * 0.3f;
 		}
 
 		/// <summary>
-		/// Returns the entry speed adjusted to the atmosphere parameters
+		/// Calculates the length multiplier based on the base multiplier and current body config
+		/// </summary>
+		float GetLengthMultiplier()
+		{
+			return fxVessel.baseLengthMultiplier * currentBody.lengthMultiplier * (float)ModSettings.I["length_mult"];
+		}
+
+		/// <summary>
+		/// Returns the entry speed adjusted to the atmosphere parameters, and takes the effect editor into account
 		/// </summary>
 		public float GetAdjustedEntrySpeed()
 		{
-			if (WindowManager.Instance.tgl_SpeedMethod)
-			{
-				return GetEntrySpeed() * fxVessel.speedMultiplier * currentBody.intensity;
-			}
-
-			return GetEntrySpeed();
+			return doEffectEditor ? (EffectEditor.Instance.effectSpeed * currentBody.strengthMultiplier) : (GetEntrySpeed() * currentBody.strengthMultiplier);
 		}
 
 		/// <summary>
@@ -903,7 +950,7 @@ namespace Firefly
 			float maxExtent = fxVessel.vesselBoundRadius;
 			float distance = maxExtent * 1.1f;
 
-			Vector3 localDir = vessel.transform.InverseTransformDirection(GetEntryVelocity());
+			Vector3 localDir = doEffectEditor ? EffectEditor.Instance.effectDirection : vessel.transform.InverseTransformDirection(GetEntryVelocity());
 			Vector3 localPos = fxVessel.vesselBoundCenter + distance * localDir;
 
 			return vessel.transform.TransformPoint(localPos);

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Firefly
 {
@@ -42,10 +39,7 @@ namespace Firefly
 		{
 			var module = action.host.FindVesselModuleImplementing<AtmoFxModule>();
 
-			if (module != null)
-			{
-				module.OnVesselSOIChanged(action.to);
-			}
+			if (module != null) module.OnVesselSOIChanged(action.to);
 		}
 	}
 }

@@ -150,5 +150,47 @@ namespace Firefly
 
 			GLEnd();
 		}
+
+		public static void DrawTransformBox(Transform t, Vector3 size, Color color)
+		{
+			var center = t.position;
+
+			var x = size.x * 0.5f;
+			var y = size.y * 0.5f;
+			var z = size.z * 0.5f;
+
+			var topa = center + t.right * x + t.up * y + t.forward * z;
+			var topb = center + t.right * x + t.up * y + t.forward * -z;
+			var topc = center + t.right * -x + t.up * y + t.forward * z;
+			var topd = center + t.right * -x + t.up * y + t.forward * -z;
+
+			var bota = center + t.right * x + t.up * -y + t.forward * z;
+			var botb = center + t.right * x + t.up * -y + t.forward * -z;
+			var botc = center + t.right * -x + t.up * -y + t.forward * z;
+			var botd = center + t.right * -x + t.up * -y + t.forward * -z;
+
+			GLStart();
+			GL.Color(color);
+
+			// Top
+			DrawLine(topa, topc, color);
+			DrawLine(topa, topb, color);
+			DrawLine(topc, topd, color);
+			DrawLine(topb, topd, color);
+
+			// Sides
+			DrawLine(topa, bota, color);
+			DrawLine(topb, botb, color);
+			DrawLine(topc, botc, color);
+			DrawLine(topd, botd, color);
+
+			// Bottom
+			DrawLine(bota, botc, color);
+			DrawLine(bota, botb, color);
+			DrawLine(botc, botd, color);
+			DrawLine(botd, botb, color);
+
+			GLEnd();
+		}
 	}
 }

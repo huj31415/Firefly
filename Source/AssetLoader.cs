@@ -44,6 +44,9 @@ namespace Firefly
 		// is everything loaded?
 		public bool allAssetsLoaded = false;
 
+		// the bundle
+		AssetBundle bundle;
+
 		public void Awake()
 		{
 			Instance = this;
@@ -52,6 +55,11 @@ namespace Firefly
 
 			LoadAssets();
 			InitAssets();
+
+			// disable the stock effects
+			Logging.Log("Disabling stock effects");
+			Logging.Log("Turning the quality down to minimal");
+			GameSettings.AERO_FX_QUALITY = 0;
 		}
 
 		/// <summary>
@@ -124,7 +132,7 @@ namespace Firefly
 
 			// load the asset bundle
 			string loadPath = Path.Combine(KSPUtil.ApplicationRootPath, bundlePath);
-			AssetBundle bundle = AssetBundle.LoadFromFile(loadPath);
+			bundle = AssetBundle.LoadFromFile(loadPath);
 
 			if (!bundle)
 			{
@@ -158,6 +166,15 @@ namespace Firefly
 					loadedPrefabs.Add(prefab.name, prefab);
 				}
 			}
+		}
+
+		public void ReloadAssets()
+		{
+			bundle.Unload(true);
+			ClearAssets();
+
+			LoadAssets();
+			InitAssets();
 		}
 
 		public bool TryGetShader(string name, out Shader shader)

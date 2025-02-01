@@ -453,6 +453,31 @@ namespace Firefly
 			renderer.material = new Material(renderer.sharedMaterial);
 			renderer.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
 
+			// pick appropriate texture for the particle
+			string textureToUse = "SparkParticles";
+			string emissionTexture = null; ;
+			switch (prefab.name)
+			{
+				case "ChunkParticles":
+					textureToUse = ParticleTextureLookup.Chunk;
+					break;
+				case "AlternateChunkParticles":
+					textureToUse = ParticleTextureLookup.ChunkAlternate;
+					break;
+				case "SmokeParticles":
+					textureToUse = ParticleTextureLookup.Smoke;
+					break;
+				case "SparkParticles":
+					textureToUse = ParticleTextureLookup.Chunk;
+					emissionTexture = ParticleTextureLookup.Chunk;
+					break;
+				default: break;
+			}
+			renderer.material.SetTexture("_MainTex", AssetLoader.Instance.loadedTextures[textureToUse]);
+
+			// set an emission texture, if required
+			if (emissionTexture != null) renderer.material.SetTexture("_EmissionMap", AssetLoader.Instance.loadedTextures[emissionTexture]);
+
 			fxVessel.particleMaterials.Add(renderer.material);
 
 			return ps;

@@ -41,7 +41,7 @@ namespace Firefly
 				OnApplicationFalse, 
 				null, null, null, null, 
 				ApplicationLauncher.AppScenes.FLIGHT, 
-				AssetLoader.Instance.iconTexture
+				AssetLoader.Instance.loadedTextures["Icon"]
 			);
 
 			GameEvents.onHideUI.Add(OnHideUi);

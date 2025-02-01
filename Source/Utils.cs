@@ -25,6 +25,14 @@ namespace Firefly
 		public const int Fx = 23;
 	}
 
+	public static class ParticleTextureLookup
+	{
+		public const string Chunk = "ChunkSprite";
+		public const string ChunkAlternate = "ChunkSprite1";
+		public const string Smoke = "SmokeSprite";
+		public const string Spark = "SparkSprite";
+	}
+
 	public class Logging
 	{
 		public const string Prefix = "[Firefly] ";

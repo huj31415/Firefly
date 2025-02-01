@@ -235,9 +235,20 @@ namespace Firefly
 			if (fxModule == null) return;
 
 			// select main body
-			ui_bodyChoice = bodyConfigs.IndexOf(vessel.mainBody.bodyName);
-			currentBody = vessel.mainBody.bodyName;
-			config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
+			string mainBody = vessel.mainBody.bodyName;
+
+			if (bodyConfigs.Contains(mainBody))  // only select if a config for the body exists
+			{
+				ui_bodyChoice = bodyConfigs.IndexOf(mainBody);
+				currentBody = mainBody;
+				config = new BodyConfig(ConfigManager.Instance.bodyConfigs[currentBody]);
+			} else  // otherwise, go with the default
+			{
+				ui_bodyChoice = 0;
+				currentBody = "Default";
+				config = new BodyConfig(ConfigManager.Instance.defaultConfig);
+			}
+
 			ResetFieldText();
 
 			// load effects

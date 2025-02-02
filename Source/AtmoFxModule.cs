@@ -420,6 +420,7 @@ namespace Firefly
 			}
 			if ((bool)ModSettings.I["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
 
+			// update the particle system properties for every one of them
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];

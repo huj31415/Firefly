@@ -1,5 +1,7 @@
 # Firefly - Revamped aerodyanmic effects for KSP
 
+## Credits
+
 The mod's icon and particle sprites were created by thunderchild, who has also made incredible concept arts for the mod and helped shape it the way it is now. The effects would definitely not look as good as they do now without him.
 
 Massive thanks to JonnyOThan for making some really awesome optimizations to the mod's plugin and other support.

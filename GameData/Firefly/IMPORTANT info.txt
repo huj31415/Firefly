@@ -3,7 +3,6 @@ Mod made by MirageDev, thunderchild, Knedlik and JonnyOThan
 IMPORTANT: Please read the bundled LICENSE agreement text file before testing. I tried to keep it as short and simple as possible.
 
 This is a testing version of the mod, so expect bugs and weird stuff to happen.
-Please turn the stock aerodynamic effects slider to the lowest value, otherwise the effects will mix with the stock ones.
 
 Important note: I have not tested this with OpenGL/Mac/Linux, so please report if anything weird happens on it.
 

@@ -143,7 +143,7 @@ namespace Firefly
 	internal class SettingsManager
 	{
 		public static SettingsManager Instance { get; private set; }
-		public const string SettingsPath = "GameData/Firefly/Configs/ModSettings.cfg";
+		public const string SettingsPath = "GameData/Firefly/ModSettings.cfg";
 
 		public ModSettings modSettings = ModSettings.CreateDefault();
 

@@ -138,7 +138,7 @@ namespace Firefly
 			};
 			for (int i = 0; i < texturesToLoad.Length; i++)
 			{
-				loadedTextures[texturesToLoad[i]] = GameDatabase.Instance.GetTexture(texturesToLoad[i], false);
+				loadedTextures[texturesToLoad[i]] = GameDatabase.Instance.GetTexture(texturePrefix + texturesToLoad[i], false);
 			}
 
 			// load the asset bundle

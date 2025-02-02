@@ -1,0 +1,8 @@
+Creating custom envelope meshes:
+
+I highly recommend doing this in a separate .mu model, and adding it to the part with an MM patch, since otherwise the envelope mesh will be treated like a normal model when the user doesn't have this mod installed.
+
+- Create the actual mesh, I highly recommend this article: https://wiki.spacewarp.org/wiki/Configuring_the_reentry_effects
+- Name the model "atmofx_envelope", or tag it with "Icon_Hidden" to only make it check if the name contains "atmofx_envelope"
+- Make the mesh have a completely transparent shader, to make it invisible
+- Set the model tag to "Icon_Hidden", to hide it from appearing on the VAB/SPH icons

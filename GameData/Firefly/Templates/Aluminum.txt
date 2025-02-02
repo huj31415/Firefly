@@ -1,0 +1,10 @@
+ATMOFX_PART
+{
+	name = [REPLACE WITH PART NAME]
+	
+	Color
+	{
+		trail_streak = 191 191 191 5
+		wrap_streak = 191 191 191 5
+	}
+}

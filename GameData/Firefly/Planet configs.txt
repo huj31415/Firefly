@@ -1,0 +1,56 @@
+Creating custom atmosphere configs:
+
+Here's a template config (taken from Duna):
+ATMOFX_BODY
+{
+	name = Duna
+	strength_multiplier = 1
+	
+	length_multiplier = 1
+	opacity_multiplier = 1
+	wrap_fresnel_modifier = 0
+	
+	particle_threshold = 1200
+	
+	streak_probability = 0.07
+	streak_threshold = -0.2
+	
+	Color
+	{
+		glow = 191 80 50 1.4
+		glow_hot = 191 90 65 2.5
+		
+		trail_primary = 76 116 191 2.5
+		trail_secondary = 151 130 191 1.8
+		trail_tertiary = 191 124 73 2
+		trail_streak = 191 124 73 2
+		
+		wrap_layer = 191 124 73 2
+		wrap_streak = 76 116 191 2.5
+		
+		shockwave = 34 41 191 3
+	}
+}
+
+
+--- Value explanations:
+name - The bodyName of the celestial body this config will be applied to
+strength_multiplier - The entry speed gets multiplied by this before getting sent to the shader
+length_multiplier - The trail length gets multiplied by this
+opacity_muliplier - The trail's opacity is multiplied by this value
+wrap_fresnel_modifier - Modifier for the wrap layer's fresnel effect, bigger values make the wrap layer more opaque in front of the spacecraft
+particle_threshold - The airspeed threshold in m/s for particles to appear
+streak_probability - This gets added to the streak probability of the shader. Should be very low, look in the stock configs for reference, located in Configs/Stock
+streak_threshold - This gets added to the streak speed threshold of the shader, which is 0.5 by default (overall range is 0-1, where 1 is 4000 m/s and 0 is 0 m/s)
+
+--- Color explanations:
+Each color is composed of 4 values, RGB and HDR intensity. The final color is the result of RGB*(2^intensity)
+glow - The color of the glow of surfaces exposed to the airstream
+glow_hot - Alternate glow color. This color is a bit more visible at higher speeds.
+trail_primary - The primary color of the trail, used for the start of the trail
+trail_secondary - The secondary color of the trail, used for most of the trail of the trail and randomly for the start
+trail_tertiary - The tertiary color of the trail, used for the ending of the trail
+trail_streak - The streak color of the trail
+wrap_layer - Main color of the wrap layer
+wrap_streak - Streak color of the wrap layer
+shockwave - The color of the bowshock

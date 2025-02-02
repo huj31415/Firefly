@@ -1,0 +1,18 @@
+Mod made by MirageDev, thunderchild, Knedlik and JonnyOThan
+
+IMPORTANT: Please read the bundled LICENSE agreement text file before testing. I tried to keep it as short and simple as possible.
+
+This is a testing version of the mod, so expect bugs and weird stuff to happen.
+Please turn the stock aerodynamic effects slider to the lowest value, otherwise the effects will mix with the stock ones.
+
+Important note: I have not tested this with OpenGL/Mac/Linux, so please report if anything weird happens on it.
+
+Instructions on how to make custom envelopes for parts is in a separate text file next to this one. If you make one then please send it to me, of course I'll give credit for it on release.
+Instructions on creating custom atmosphere configs as well as planet pack configs are also in a separate text files. Same as the custom envelopes, sending your work to me would be much appreciated.
+Instructions on creating custom part color override configs are in a separate text file. There are some provided templates in the Templates folder.
+
+You can see debug info and override settings on/off in the toolbar app window (app has an icon of a capsule reentry).
+
+Parts which use Skinned Mesh Renderers, like Kerbals or inflatable centrifuges might have issues. Please report any parts which don't work.
+
+As always, when reporting anything post your KSP.log and a screenshot of both of the mod's windows if possible.

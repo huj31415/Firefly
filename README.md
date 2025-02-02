@@ -9,7 +9,7 @@ Firefly completely replaces the stock aerodynamic VFX with it's own system.
 - Allows custom "envelopes" for parts
 - Has a set of template configs for planet packs, planets and parts
 
-For instructions on writing configs and making envelopes, as well as other info check the [wiki]().
+For instructions on writing configs and making envelopes, as well as other info, check the [wiki]().
 
 ## Dependencies
 The only **required** dependency is:

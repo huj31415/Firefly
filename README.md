@@ -30,5 +30,5 @@ Without the paper, this mod would definitely not be possible.
 Massive thanks to all the people mentioned above, as well as everyone from the early testing groups - without you the mod would probably be much different than it is now, or wouldn't exist at all :)
 
 ## Licensing
-- Firefly and it's source code (both for the plugin and shader) are licensed under GPL 3.0 (see [LICENSE](https://github.com/M1rageDev/Firefly/blob/dev/LICENSE)).
+- Firefly and it's source code (both for the plugin and shaders) are licensed under GPL 3.0 (see [LICENSE](https://github.com/M1rageDev/Firefly/blob/dev/LICENSE)).
 - All model and texture assets (.mu, .png, .dds  etc.) are All Rights Reserved.

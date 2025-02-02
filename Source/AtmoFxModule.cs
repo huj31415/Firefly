@@ -6,21 +6,6 @@ using UnityEngine.Rendering;
 namespace Firefly
 {
 	/// <summary>
-	/// Stores a pair of floats
-	/// </summary>
-	public struct FloatPair
-	{
-		public float x;
-		public float y;
-
-		public FloatPair(float x, float y)
-		{
-			this.x = x;
-			this.y = y;
-		}
-	}
-
-	/// <summary>
 	/// Stores the data of an fx envelope renderer
 	/// </summary>
 	public struct FxEnvelopeModel
@@ -97,17 +82,19 @@ namespace Firefly
 
 		public bool doEffectEditor = false;
 
-		// Snippet taken from Reentry Particle Effects by pizzaoverhead
+		// finds the stock handler of the aero FX
 		AerodynamicsFX _aeroFX;
 		public AerodynamicsFX AeroFX
 		{
 			get
 			{
+				// if the private handle isn't assigned yet, then do it now
 				if (_aeroFX == null)
 				{
+					// find the object
 					GameObject fxLogicObject = GameObject.Find("FXLogic");
 					if (fxLogicObject != null)
-						_aeroFX = fxLogicObject.GetComponent<AerodynamicsFX>();
+						_aeroFX = fxLogicObject.GetComponent<AerodynamicsFX>();  // get the actual FX handling component
 				}
 				return _aeroFX;
 			}
@@ -419,10 +406,10 @@ namespace Firefly
 			fxVessel.orgParticleRates.Clear();
 
 			// spawn particle systems
-			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles);
-			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles);
-			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles);
-			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles);
+			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles, "ChunkSprite", "ChunkSprite");
+			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles, "ChunkSprite", "");
+			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles, "ChunkSprite1", "");
+			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles, "SmokeSprite", "");
 
 			// disable if needed
 			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
@@ -433,6 +420,7 @@ namespace Firefly
 			}
 			if ((bool)ModSettings.I["disable_smoke"]) fxVessel.smokeParticles.gameObject.SetActive(false);
 
+			// update the particle system properties for every one of them
 			for (int i = 0; i < fxVessel.allParticles.Count; i++)
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
@@ -447,7 +435,7 @@ namespace Firefly
 			}
 		}
 
-		ParticleSystem CreateParticleSystem(GameObject prefab)
+		ParticleSystem CreateParticleSystem(GameObject prefab, string texture, string emissionTexture)
 		{
 			// instantiate prefab
 			ParticleSystem ps = Instantiate(prefab, vessel.transform).GetComponent<ParticleSystem>();
@@ -465,6 +453,12 @@ namespace Firefly
 			ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
 			renderer.material = new Material(renderer.sharedMaterial);
 			renderer.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
+
+			// pick appropriate texture for the particle
+			renderer.material.SetTexture("_MainTex", AssetLoader.Instance.loadedTextures[texture]);
+
+			// set an emission texture, if required
+			if (!string.IsNullOrEmpty(emissionTexture)) renderer.material.SetTexture("_EmissionMap", AssetLoader.Instance.loadedTextures[emissionTexture]);
 
 			fxVessel.particleMaterials.Add(renderer.material);
 

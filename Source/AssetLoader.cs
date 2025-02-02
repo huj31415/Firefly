@@ -11,11 +11,11 @@ namespace Firefly
 		public static AssetLoader Instance { get; private set; }
 
 		// path to the assets
-		public const string iconPath = "Firefly/Assets/Icons/Icon";
-		public const string bundlePath ="GameData/Firefly/Assets/Shaders/fxshaders.ksp";
+		public const string texturePrefix = "Firefly/Assets/Textures/";
+		public const string bundlePath = "GameData/Firefly/Assets/Shaders/fxshaders.ksp";
 
-		// loaded icon
-		public Texture2D iconTexture;
+		// loaded textures
+		public Dictionary<string, Texture2D> loadedTextures = new Dictionary<string, Texture2D>();
 
 		// our loaded assets
 		public Dictionary<string, Shader> loadedShaders = new Dictionary<string, Shader>();
@@ -127,8 +127,19 @@ namespace Firefly
 		/// </summary>
 		internal void LoadAssets()
 		{
-			// load the icon texture
-			iconTexture = GameDatabase.Instance.GetTexture(iconPath, false);
+			// load the textures
+			string[] texturesToLoad = new string[5]
+			{
+				"Icon",
+				"ChunkSprite",
+				"ChunkSprite1",
+				"SmokeSprite",
+				"SparkSprite"
+			};
+			for (int i = 0; i < texturesToLoad.Length; i++)
+			{
+				loadedTextures[texturesToLoad[i]] = GameDatabase.Instance.GetTexture(texturePrefix + texturesToLoad[i], false);
+			}
 
 			// load the asset bundle
 			string loadPath = Path.Combine(KSPUtil.ApplicationRootPath, bundlePath);

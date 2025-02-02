@@ -4,6 +4,21 @@ using UnityEngine;
 
 namespace Firefly
 {
+	/// <summary>
+	/// Stores a pair of floats
+	/// </summary>
+	public struct FloatPair
+	{
+		public float x;
+		public float y;
+
+		public FloatPair(float x, float y)
+		{
+			this.x = x;
+			this.y = y;
+		}
+	}
+
 	public static class AtmoFxLayers
 	{
 		public const int Spacecraft = 0;
@@ -182,24 +197,17 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Returns the angle of attack
-		/// Code courtesy FAR
+		/// Returns the angle of attack of a vessel
+		/// Technically this is not the angle of attack, but it's good enough for this project
 		/// </summary>
 		public static float GetAngleOfAttack(Vessel vessel)
 		{
-			// Code courtesy FAR.
-			Transform refTransform = vessel.GetTransform();
-			Vector3 velVectorNorm = vessel.srf_velocity.normalized;
+			Transform transform = vessel.GetTransform();
+			Vector3 velocity = vessel.srf_velocity.normalized;
 
-			Vector3 tmpVec = refTransform.up * Vector3.Dot(refTransform.up, velVectorNorm) + refTransform.forward * Vector3.Dot(refTransform.forward, velVectorNorm);   //velocity vector projected onto a plane that divides the airplane into left and right halves
-			float AoA = Vector3.Dot(tmpVec.normalized, refTransform.forward);
-			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
-			if (float.IsNaN(AoA))
-			{
-				AoA = 0.0f;
-			}
+			float angle = Vector3.Angle(transform.forward, velocity) * Mathf.Deg2Rad;
 
-			return AoA;
+			return angle;
 		}
 
 		/// <summary>

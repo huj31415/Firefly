@@ -27,7 +27,7 @@ Massive thanks to **JonnyOThan** for making some really awesome optimizations to
 The core shader was based on **Leah Lindner's** [paper](https://leah-lindner.com/blog/atmospheric-entry/) describing a method of creating promising reentry VFX.
 Without the paper, this mod would definitely not be possible.
 
-Massive thanks to all the people mentioned above, as well as everyone from the early testing groups - without you the mod would probably be much different than it is now, or wouldn't exist at all :)
+Massive thanks to all the people mentioned above, as well as everyone from the early testing groups, and all the Patrons - without you the mod would probably be much different than it is now, or wouldn't exist at all :)
 
 ## Licensing
 - Firefly and it's source code (both for the plugin and shaders) are licensed under GPL 3.0 (see [LICENSE](https://github.com/M1rageDev/Firefly/blob/dev/LICENSE)).

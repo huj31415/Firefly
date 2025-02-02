@@ -406,10 +406,10 @@ namespace Firefly
 			fxVessel.orgParticleRates.Clear();
 
 			// spawn particle systems
-			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles);
-			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles);
-			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles);
-			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles);
+			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles, "ChunkSprite", "ChunkSprite");
+			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles, "ChunkSprite", "");
+			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles, "ChunkSprite1", "");
+			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles, "SmokeSprite", "");
 
 			// disable if needed
 			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
@@ -434,7 +434,7 @@ namespace Firefly
 			}
 		}
 
-		ParticleSystem CreateParticleSystem(GameObject prefab)
+		ParticleSystem CreateParticleSystem(GameObject prefab, string texture, string emissionTexture)
 		{
 			// instantiate prefab
 			ParticleSystem ps = Instantiate(prefab, vessel.transform).GetComponent<ParticleSystem>();
@@ -454,29 +454,10 @@ namespace Firefly
 			renderer.material.SetTexture("_AirstreamTex", fxVessel.airstreamTexture);
 
 			// pick appropriate texture for the particle
-			string textureToUse = "SparkParticles";
-			string emissionTexture = null; ;
-			switch (prefab.name)
-			{
-				case "ChunkParticles":
-					textureToUse = ParticleTextureLookup.Chunk;
-					break;
-				case "AlternateChunkParticles":
-					textureToUse = ParticleTextureLookup.ChunkAlternate;
-					break;
-				case "SmokeParticles":
-					textureToUse = ParticleTextureLookup.Smoke;
-					break;
-				case "SparkParticles":
-					textureToUse = ParticleTextureLookup.Chunk;
-					emissionTexture = ParticleTextureLookup.Chunk;
-					break;
-				default: break;
-			}
-			renderer.material.SetTexture("_MainTex", AssetLoader.Instance.loadedTextures[textureToUse]);
+			renderer.material.SetTexture("_MainTex", AssetLoader.Instance.loadedTextures[texture]);
 
 			// set an emission texture, if required
-			if (emissionTexture != null) renderer.material.SetTexture("_EmissionMap", AssetLoader.Instance.loadedTextures[emissionTexture]);
+			if (!string.IsNullOrEmpty(emissionTexture)) renderer.material.SetTexture("_EmissionMap", AssetLoader.Instance.loadedTextures[emissionTexture]);
 
 			fxVessel.particleMaterials.Add(renderer.material);
 

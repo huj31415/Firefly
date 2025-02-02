@@ -68,8 +68,8 @@ namespace Firefly
 		internal void InitAssets()
 		{
 			Logging.Log("Versioning:");
-			Logging.Log(Versioning.VersionAuthor);
-			Logging.Log(Versioning.Version);
+			Logging.Log(Versioning.VersionAuthor(this));
+			Logging.Log(Versioning.Version(this));
 
 			// load shader
 			bool hasShader = TryGetShader("MirageDev/AtmosphericEntry", out Shader sh);

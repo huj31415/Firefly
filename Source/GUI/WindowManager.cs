@@ -87,7 +87,7 @@ namespace Firefly
 		{
 			if (uiHidden || !appToggle || FlightGlobals.ActiveVessel == null) return;
 
-			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, $"Firefly {Versioning.Version}");
+			windowPosition = GUILayout.Window(416, windowPosition, OnWindow, $"Firefly {Versioning.Version(this)}");
 
 			// draw the effect editor and its dialogs
 			if (effectEditorActive) effectEditorPosition = GUILayout.Window(512, effectEditorPosition, effectEditor.Gui, "Effect editor");

@@ -397,6 +397,7 @@ namespace Firefly
 			{
 				Transform t = vessel.transform.GetChild(i);
 
+				// TODO: look into other methods of doing this
 				// this is stupid, I don't know why this is neccessary but it is
 				// to avoid conflict with ShVAK's VaporCones mod, check the name of the transform before destroying it
 				if (!t.name.Contains("FireflyPS")) continue;

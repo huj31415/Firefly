@@ -398,6 +398,9 @@ namespace Firefly
 				Transform t = vessel.transform.GetChild(i);
 
 				// this is stupid, I don't know why this is neccessary but it is
+				// to avoid conflict with ShVAK's VaporCones mod, check the name of the transform before destroying it
+				if (!t.name.Contains("FireflyPS")) continue;
+
 				if (t.TryGetComponent(out ParticleSystem _)) Destroy(t.gameObject);
 			}
 
@@ -406,10 +409,10 @@ namespace Firefly
 			fxVessel.orgParticleRates.Clear();
 
 			// spawn particle systems
-			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles, "ChunkSprite", "ChunkSprite");
-			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles, "ChunkSprite", "");
-			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles, "ChunkSprite1", "");
-			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles, "SmokeSprite", "");
+			fxVessel.sparkParticles = CreateParticleSystem(AssetLoader.Instance.sparkParticles, "Sparks", "ChunkSprite", "ChunkSprite");
+			fxVessel.chunkParticles = CreateParticleSystem(AssetLoader.Instance.chunkParticles, "Chunks", "ChunkSprite", "");
+			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles, "ChunksAlternate", "ChunkSprite1", "");
+			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles, "Smoke", "SmokeSprite", "");
 
 			// disable if needed
 			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
@@ -435,11 +438,14 @@ namespace Firefly
 			}
 		}
 
-		ParticleSystem CreateParticleSystem(GameObject prefab, string texture, string emissionTexture)
+		ParticleSystem CreateParticleSystem(GameObject prefab, string name, string texture, string emissionTexture)
 		{
 			// instantiate prefab
 			ParticleSystem ps = Instantiate(prefab, vessel.transform).GetComponent<ParticleSystem>();
 			fxVessel.allParticles.Add(ps);
+
+			// change transform name
+			ps.gameObject.name = "FireflyPS_" + name;
 
 			// store original emission rate
 			ParticleSystem.MinMaxCurve curve = ps.emission.rateOverTime;

@@ -21,8 +21,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
-    <IntermediateOutputPath>..\obj\Debug\</IntermediateOutputPath>
-    <OutputPath>..\bin\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\Debug\</IntermediateOutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -30,8 +30,8 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
-    <IntermediateOutputPath>..\obj\Release\</IntermediateOutputPath>
-    <OutputPath>..\bin\Release\</OutputPath>
+    <IntermediateOutputPath>obj\Release\</IntermediateOutputPath>
+    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>

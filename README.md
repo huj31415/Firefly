@@ -10,7 +10,7 @@ Firefly completely replaces the stock aerodynamic visual effects with its own cu
 - Supports custom "envelopes" for individual parts.  
 - Includes a set of template configs for planet packs, planets, and parts.  
 
-For details on writing configs, creating envelopes, and other information, check the [wiki]().  
+For details on writing configs, creating envelopes, and other information, check the [wiki](https://github.com/M1rageDev/Firefly/wiki).  
 
 ## Dependencies  
 The only **required** dependency is:  

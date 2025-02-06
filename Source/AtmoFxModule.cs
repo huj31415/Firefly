@@ -60,7 +60,9 @@ namespace Firefly
 		public float baseLengthMultiplier = 1f;
 
 		public Material material;
-	}
+
+        public GameObject flareBillboard;
+    }
 
 	/// <summary>
 	/// The module which manages the effects for each vessel
@@ -74,9 +76,12 @@ namespace Firefly
 
 		float lastFixedTime;
 		float desiredRate;
+		float mult;
 		float lastSpeed;
+		float defaultFOV = 60f;
 
-		double vslLastAlt;
+
+        double vslLastAlt;
 
 		public BodyConfig currentBody;
 
@@ -204,7 +209,10 @@ namespace Firefly
 			// create the particles
 			if (!(bool)ModSettings.I["disable_particles"]) CreateParticleSystems();  // run the function only if they're enabled in settings
 
-			Logging.Log("Finished loading vessel");
+            //this.defaultFOV = 60f; // Camera.main.fieldOfView;
+            //Logging.Log($"Default FOV = {this.defaultFOV}");
+
+            Logging.Log("Finished loading vessel");
 			isLoaded = true;
 		}
 
@@ -415,8 +423,21 @@ namespace Firefly
 			fxVessel.alternateChunkParticles = CreateParticleSystem(AssetLoader.Instance.alternateChunkParticles, "ChunksAlternate", "ChunkSprite1", "");
 			fxVessel.smokeParticles = CreateParticleSystem(AssetLoader.Instance.smokeParticles, "Smoke", "SmokeSprite", "");
 
-			// disable if needed
-			if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
+            if (fxVessel.flareBillboard == null) fxVessel.flareBillboard = CreateFlareBillboard(AssetLoader.Instance.loadedTextures["FlareSprite"]);
+            // Parent it to the vessel
+            //this.fxVessel.flareBillboard.transform.SetParent(this.vessel.transform, true);
+
+            ModifyParticleSys(
+                fxVessel.smokeParticles,
+                (float)ModSettings.I["lifetime"],
+                Mathf.RoundToInt((float)ModSettings.I["maxParticles"]),
+                (float)ModSettings.I["startOpacity"],
+                (float)ModSettings.I["startSize"],
+                (float)ModSettings.I["endSize"]
+            );
+
+            // disable if needed
+            if ((bool)ModSettings.I["disable_sparks"]) fxVessel.sparkParticles.gameObject.SetActive(false);
 			if ((bool)ModSettings.I["disable_debris"])
 			{
 				fxVessel.chunkParticles.gameObject.SetActive(false);
@@ -472,10 +493,139 @@ namespace Firefly
 			return ps;
 		}
 
-		/// <summary>
-		/// Kills all particle systems
-		/// </summary>
-		void KillAllParticles()
+        GameObject CreateFlareBillboard(Texture2D flareTexture)
+        {
+            // Create a new GameObject for the billboard
+            GameObject flareBillboard = new GameObject("FlareBillboard");
+
+            // Add a Quad Mesh
+            MeshRenderer renderer = flareBillboard.AddComponent<MeshRenderer>();
+            MeshFilter meshFilter = flareBillboard.AddComponent<MeshFilter>();
+            meshFilter.mesh = this.CreateQuad();
+
+            Material flareMaterial = new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended"));
+            flareMaterial.mainTexture = flareTexture;
+            flareMaterial.SetColor("_Color", new Color(1f, 1f, 1f, 0f)); // Fully opaque at start
+            renderer.material = flareMaterial;
+
+            // Parent to the vessel
+            flareBillboard.transform.SetParent(this.vessel.transform, false);
+            flareBillboard.transform.localPosition = this.vessel.CoM; //this.vessel.transform.position; //this.fxVessel.vesselBoundCenter; // Vector3.zero; // Center of vessel
+            flareBillboard.transform.localScale = Vector3.one; // Adjust size as needed
+
+            Logging.Log("Flare Billboard Created");
+
+            return flareBillboard;
+        }
+
+        Mesh CreateQuad()
+        {
+            Mesh mesh = new Mesh();
+
+            // Define vertices (positions in 3D space)
+            Vector3[] vertices = new Vector3[4]
+            {
+                new Vector3(-0.5f, -0.5f, 0f), // Bottom-left
+				new Vector3(0.5f, -0.5f, 0f),  // Bottom-right
+				new Vector3(-0.5f, 0.5f, 0f),  // Top-left
+				new Vector3(0.5f, 0.5f, 0f)    // Top-right
+            };
+
+            // Define UV mapping (texture coordinates)
+            Vector2[] uv = new Vector2[4]
+            {
+                new Vector2(0f, 0f), // Bottom-left
+				new Vector2(1f, 0f), // Bottom-right
+				new Vector2(0f, 1f), // Top-left
+				new Vector2(1f, 1f)  // Top-right
+            };
+
+            // Define triangle indices
+            int[] triangles = new int[6]
+            {
+                0, 2, 1, // First triangle (bottom-left, top-left, bottom-right)
+				1, 2, 3  // Second triangle (bottom-right, top-left, top-right)
+            };
+
+            // Assign data to mesh
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+
+            return mesh;
+        }
+
+
+        void ModifyParticleSys(ParticleSystem particleSystem, float newLifetime, int maxParticles, float alpha, float startSize, float endSize)
+        {
+            var mainModule = particleSystem.main;
+
+            // Extend trail
+            mainModule.startLifetime = newLifetime;
+            mainModule.maxParticles = maxParticles;
+            //mainModule.startSpeed = 10;
+
+			// Original color distribution
+            // alpha 0,0 -> 96,12.6 -> 70,84.7 -> 0,100
+            // color 0 -> CB8BFF,12.1 -> FF4700,30.3 -> 939393,76.8 <- 0
+			//              purple    ->    orange   ->    gray
+
+			// Adjust colors
+            var colorOverLifetime = particleSystem.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            // Get the existing color gradient
+            Gradient originalGradient = colorOverLifetime.color.gradient;
+
+			// Modify gradient
+            Gradient newGradient = new Gradient();
+			// Modify color distribution
+            GradientColorKey[] colorKeys = originalGradient.colorKeys;
+			//colorKeys[2].time = 0.50f;
+			//colorKeys[3].time = 0.85f;
+			//Logging.Log(colorKeys);
+			//foreach (GradientColorKey k in colorKeys)
+			//{
+			//	Logging.Log($"{k.time}, {k.color}");
+			//}
+
+            // Modify the opacity
+            GradientAlphaKey[] alphaKeys = originalGradient.alphaKeys;
+			//Logging.Log(alphaKeys);
+            alphaKeys[0].alpha = alpha;
+
+			alphaKeys[1].time = 0.1f;
+			alphaKeys[1].alpha = 1f;
+
+			//alphaKeys[2].time = 0.7f;
+			//alphaKeys[2].alpha = 0.8f;
+
+			//alphaKeys[3].alpha = 0f;
+			//foreach (GradientAlphaKey k in alphaKeys)
+			//{
+			//    Logging.Log($"{k.time}, {k.alpha}");
+			//}
+
+			// Assign the color and alpha keys back to the new gradient
+			newGradient.SetKeys(colorKeys, alphaKeys);
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(newGradient);
+
+            // Increase particle size over time
+            var sizeOverLifetime = particleSystem.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+
+            // Create an animation curve where the size starts small and grows larger over time
+            AnimationCurve sizeCurve = new AnimationCurve();
+            sizeCurve.AddKey(0f, startSize); // Start size
+            sizeCurve.AddKey(1f, endSize); // End size
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+        }
+
+
+        /// <summary>
+        /// Kills all particle systems
+        /// </summary>
+        void KillAllParticles()
 		{
 			if (fxVessel.areParticlesKilled) return;  // no need to constantly kill the particles
 
@@ -546,8 +696,14 @@ namespace Firefly
 			{
 				ParticleSystem ps = fxVessel.allParticles[i];
 
-				float min = fxVessel.orgParticleRates[i].x * desiredRate;
-				float max = fxVessel.orgParticleRates[i].y * desiredRate;
+                mult = desiredRate;
+                if (ps.Equals(fxVessel.smokeParticles))
+                {
+                    mult *= (desiredRate * (float)ModSettings.I["emitMult"]);
+                }
+
+                float min = fxVessel.orgParticleRates[i].x * mult;
+				float max = fxVessel.orgParticleRates[i].y * mult;
 
 				UpdateParticleRate(ps, min, max);
 			}
@@ -562,21 +718,54 @@ namespace Firefly
 
 			fxVessel.chunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.24f * lengthMultiplier;
 
-			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * lengthMultiplier;
+			fxVessel.alternateChunkParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -1.62f * lengthMultiplier; // * offsetMult;
 
-			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * -2f * Mathf.Max(lengthMultiplier * 0.5f, 1f);
+			fxVessel.smokeParticles.transform.localPosition = fxVessel.vesselBoundCenter + direction * ((float)ModSettings.I["offsetMult"] * fxVessel.vesselBoundRadius) * -2f * Mathf.Max(lengthMultiplier * 0.5f, 1f);
 
 			// directions
-			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 30f, 70f);
-			UpdateParticleVel(fxVessel.chunkParticles, worldVel, 30f, 70f);
-			UpdateParticleVel(fxVessel.alternateChunkParticles, worldVel, 15f, 20f);
-			UpdateParticleVel(fxVessel.smokeParticles, worldVel, 125f, 135f);
+			UpdateParticleVel(fxVessel.sparkParticles, worldVel, 60f, 100f); //30f, 70f
+            UpdateParticleVel(fxVessel.chunkParticles, worldVel, 60f, 100f); //30f, 70f
+            UpdateParticleVel(fxVessel.alternateChunkParticles, worldVel, 30f, 40f); //15f, 20f
+            var vel = (float)vessel.srf_velocity.magnitude;
+            UpdateParticleVel(fxVessel.smokeParticles, worldVel, vel, vel + 2);
 		}
 
-		/// <summary>
-		/// Unloads the vessel, removing instances and other things like that
-		/// </summary>
-		public void RemoveVesselFx(bool onlyEnvelopes = false)
+        void UpdateFlareBillboard(GameObject flareBillboard, Transform vesselTransform)
+        {
+            // Position the billboard at the vessel's center
+            flareBillboard.transform.position = vesselTransform.position; //this.fxVessel.vesselBoundCenter;//
+
+            // Make the billboard face the camera
+            Camera mainCamera = Camera.main;
+
+            if (mainCamera != null)
+            {
+                flareBillboard.transform.LookAt(mainCamera.transform);
+                flareBillboard.transform.Rotate(0, 180f, 0); // Flip to face the camera correctly
+				float distance = Vector3.Distance(mainCamera.transform.position, this.vessel.transform.position);
+
+				// Scale the billboard size
+				float minDistance = this.fxVessel.vesselBoundRadius * 200f;
+				float maxDistance = this.fxVessel.vesselBoundRadius * 5000f;
+				float maxScale = this.fxVessel.vesselBoundRadius * 20f;
+
+				// Calculate scale using the formula, originally just state
+				float scale = Mathf.Clamp01((distance - minDistance) / (maxDistance - minDistance))
+								* Mathf.Clamp01(this.AeroFX.FxScalar * this.AeroFX.state)
+								* maxScale
+								* (mainCamera.fieldOfView / defaultFOV);
+
+				//Logging.Log($"FOV ratio: {mainCamera.fieldOfView / defaultFOV}");
+
+				// Apply scale to the flare billboard
+				flareBillboard.transform.localScale = Vector3.one * scale;
+            }
+        }
+
+        /// <summary>
+        /// Unloads the vessel, removing instances and other things like that
+        /// </summary>
+        public void RemoveVesselFx(bool onlyEnvelopes = false)
 		{
 			if (!isLoaded) return;
 
@@ -599,6 +788,8 @@ namespace Firefly
 				if (fxVessel.chunkParticles != null) Destroy(fxVessel.chunkParticles.gameObject);
 				if (fxVessel.alternateChunkParticles != null) Destroy(fxVessel.alternateChunkParticles.gameObject);
 				if (fxVessel.smokeParticles != null) Destroy(fxVessel.smokeParticles.gameObject);
+
+				if (fxVessel.flareBillboard != null) Destroy(fxVessel.flareBillboard.gameObject);
 
 				fxVessel = null;
 			}
@@ -701,8 +892,14 @@ namespace Firefly
 				RemoveVesselFx(false);
 			}
 
-			// Check if the vessel is not marked for reloading and if it's entering the atmosphere
-			double descentRate = vessel.altitude - vslLastAlt;
+
+			if (fxVessel.flareBillboard != null && vessel.transform != null)
+			{
+				UpdateFlareBillboard(fxVessel.flareBillboard, vessel.transform);
+			}
+
+            // Check if the vessel is not marked for reloading and if it's entering the atmosphere
+            double descentRate = vessel.altitude - vslLastAlt;
 			vslLastAlt = vessel.altitude;
 			if (reloadDelayFrames < 1 && descentRate < 0 && vessel.altitude <= vessel.mainBody.atmosphereDepth && !isLoaded)
 			{

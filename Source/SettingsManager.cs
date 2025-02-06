@@ -56,7 +56,15 @@ namespace Firefly
 					{ "disable_debris", new Field(false, ValueType.Boolean, true) },
 					{ "disable_smoke", new Field(false, ValueType.Boolean, true) },
 					{ "strength_base", new Field(2800f, ValueType.Float, false) },
-					{ "length_mult", new Field(1f, ValueType.Float, false) }
+					{ "length_mult", new Field(1f, ValueType.Float, false) },
+					
+					{ "lifetime", new Field(10f, ValueType.Float, true) },
+					{ "maxParticles", new Field(20000f, ValueType.Float, true) },
+					{ "startOpacity", new Field(0.8f, ValueType.Float, true) },
+					{ "startSize", new Field(0.15f, ValueType.Float, true) },
+					{ "endSize", new Field(3f, ValueType.Float, true) },
+					{ "offsetMult", new Field(1.5f, ValueType.Float, false) },
+					{ "emitMult", new Field(5f, ValueType.Float, false) }
 				}
 			};
 

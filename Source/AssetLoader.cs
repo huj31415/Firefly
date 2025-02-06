@@ -128,13 +128,14 @@ namespace Firefly
 		internal void LoadAssets()
 		{
 			// load the textures
-			string[] texturesToLoad = new string[5]
+			string[] texturesToLoad = new string[6]
 			{
 				"Icon",
 				"ChunkSprite",
 				"ChunkSprite1",
 				"SmokeSprite",
-				"SparkSprite"
+				"SparkSprite",
+				"FlareSprite"
 			};
 			for (int i = 0; i < texturesToLoad.Length; i++)
 			{

@@ -31,7 +31,6 @@ struct GS_DATA
 	half4 color : COLOR;
 
 	float3 positionWS : TEXCOORD1;
-	float4 screenPos : TEXCOORD3;
 };
 			
 // Creates a vertex instance that can be added to a triangle stream
@@ -44,8 +43,6 @@ GS_DATA CreateVertex(float3 pos, half4 color, half a)
 	o.color.a = a;
 
 	o.positionWS = TransformObjectToWorld(pos);
-
-	o.screenPos = ComputeGrabScreenPos(o.position);
 
 	return o;
 }
